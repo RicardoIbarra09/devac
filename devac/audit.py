@@ -58,9 +58,22 @@ class EventRelation(Enum):
     DISJOINT = "disjoint"
 
 
+def _range_segments(lo_min, hi_min):
+    """Normaliza un rango horario (en minutos, 0..1439) a una lista de
+    segmentos bien formados (inicio <= fin). Si lo_min > hi_min, el rango
+    cruza medianoche (p. ej. 23:00-06:00) y se representa como dos
+    segmentos: [lo_min, 1439] y [0, hi_min] -- la misma particion que ya
+    usa IntervalTree.insert() para indexarlo."""
+    if lo_min is None or hi_min is None:
+        return []
+    if lo_min <= hi_min:
+        return [(lo_min, hi_min)]
+    return [(lo_min, 1439), (0, hi_min)]
+
+
 def _as_set_spec(value):
     """Normaliza un valor del DSL a una forma comparable:
-    ("wild",) | ("exact", v) | ("set", frozenset) | ("range", lo_min, hi_min)."""
+    ("wild",) | ("exact", v) | ("set", frozenset) | ("range", [(lo,hi), ...])."""
     if isinstance(value, str):
         v = value.strip().lower()
         if v == "*":
@@ -71,7 +84,7 @@ def _as_set_spec(value):
             return ("set", frozenset(str(v).strip().lower() for v in value["in"]))
         if "range" in value:
             lo, hi = value["range"]
-            return ("range", _to_minutes(str(lo)), _to_minutes(str(hi)))
+            return ("range", _range_segments(_to_minutes(str(lo)), _to_minutes(str(hi))))
     return ("exact", str(value).strip().lower())
 
 
@@ -91,18 +104,27 @@ def _covers(a: tuple, b: tuple) -> bool:
             return b[1].issubset(a[1])
         return False  # un conjunto discreto no puede probarse que cubre un range continuo
     if ta == "range":
-        lo, hi = a[1], a[2]
-        if lo is None or hi is None:
+        segs_a = a[1]
+        if not segs_a:
             return False
         if tb == "exact":
             m = _to_minutes(b[1])
-            return m is not None and lo <= m <= hi
+            return m is not None and any(lo <= m <= hi for lo, hi in segs_a)
         if tb == "set":
             ms = [_to_minutes(v) for v in b[1]]
-            return len(ms) > 0 and all(m is not None and lo <= m <= hi for m in ms)
+            return len(ms) > 0 and all(
+                m is not None and any(lo <= m <= hi for lo, hi in segs_a) for m in ms
+            )
         if tb == "range":
-            blo, bhi = b[1], b[2]
-            return blo is not None and bhi is not None and lo <= blo and bhi <= hi
+            segs_b = b[1]
+            # A cubre B si CADA segmento de B queda contenido por completo
+            # dentro de ALGUN segmento de A (no basta con la union a trozos,
+            # porque un segmento de B podria quedar repartido entre dos
+            # segmentos de A sin que ninguno solo lo cubra entero).
+            return bool(segs_b) and all(
+                any(alo <= blo and bhi <= ahi for alo, ahi in segs_a)
+                for blo, bhi in segs_b
+            )
     return False
 
 
@@ -114,18 +136,18 @@ def _intersects(a: tuple, b: tuple) -> bool:
     if ta == "set" and tb == "set":
         return len(a[1] & b[1]) > 0
     if ta == "range" and tb == "range":
-        alo, ahi, blo, bhi = a[1], a[2], b[1], b[2]
-        if None in (alo, ahi, blo, bhi):
+        segs_a, segs_b = a[1], b[1]
+        if not segs_a or not segs_b:
             return False
-        return alo <= bhi and blo <= ahi
+        return any(alo <= bhi and blo <= ahi for alo, ahi in segs_a for blo, bhi in segs_b)
     if "range" in (ta, tb) and "set" in (ta, tb):
         rng, st = (a, b) if ta == "range" else (b, a)
-        lo, hi = rng[1], rng[2]
-        if lo is None or hi is None:
+        segs = rng[1]
+        if not segs:
             return False
         for v in st[1]:
             m = _to_minutes(v)
-            if m is not None and lo <= m <= hi:
+            if m is not None and any(lo <= m <= hi for lo, hi in segs):
                 return True
         return False
     return False  # exact vs exact / exact vs set / exact vs range: ya resuelto por _covers

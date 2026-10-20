@@ -118,6 +118,16 @@ class IntervalTree:
         end = _to_minutes(end_hhmm)
         if start is None or end is None:
             return False
+        if start > end:
+            # Rango que cruza medianoche (p. ej. 23:00-06:00): el arbol
+            # asume intervalos bien formados (start <= end), asi que se
+            # indexa como dos segmentos normales que juntos cubren lo
+            # mismo: [start, 23:59] y [00:00, end]. Ambos nodos comparten
+            # community_id/policy_id, asi que una consulta que caiga en
+            # cualquiera de los dos encuentra el mismo evento original.
+            self.insert_raw(start, 1439, community_id, policy_id)
+            self.insert_raw(0, end, community_id, policy_id)
+            return True
         self._root = _insert(self._root, _Node(start, end, community_id, policy_id))
         self._count += 1
         return True
@@ -153,7 +163,19 @@ class IntervalTree:
             return []
         matches: List[_Node] = []
         _query_point(self._root, point, matches)
-        return [(n.community_id, n.policy_id) for n in matches]
+        # Un rango que cruza medianoche vive como dos nodos (ver insert());
+        # en principio un punto solo puede caer en uno de los dos segmentos,
+        # pero se deduplica por (community_id, policy_id) de todas formas,
+        # para no depender de esa garantia si el arbol llega a usarse de
+        # otra forma mas adelante.
+        seen: set = set()
+        result: List[Tuple[str, str]] = []
+        for n in matches:
+            key = (n.community_id, n.policy_id)
+            if key not in seen:
+                seen.add(key)
+                result.append(key)
+        return result
 
     def clear(self) -> None:
         self._root = None

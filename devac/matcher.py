@@ -12,9 +12,20 @@ class EventMatcher:
             start_time = datetime.strptime(start_str.strip(), "%H:%M").time()
             end_time   = datetime.strptime(end_str.strip(),   "%H:%M").time()
             req_time   = datetime.strptime(request_time.strip(), "%H:%M").time()
-            return start_time <= req_time <= end_time
         except ValueError:
             return False
+
+        start = start_time.hour * 60 + start_time.minute
+        end   = end_time.hour * 60 + end_time.minute
+        point = req_time.hour * 60 + req_time.minute
+
+        if start <= end:
+            return start <= point <= end
+        # Rango que cruza medianoche (p. ej. 23:00-06:00): coincide si el
+        # punto cae despues de `start` (hacia la medianoche) o antes/igual
+        # a `end` (desde la medianoche hacia adelante). Ambos extremos
+        # inclusivos, igual que en el caso normal.
+        return point >= start or point <= end
 
     @staticmethod
     def expand_value(value: Union[str, dict], attr: str) -> List[str]:
