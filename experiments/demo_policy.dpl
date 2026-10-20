@@ -1,0 +1,10 @@
+
+POLICY P-MAL EFFECT ALLOW {
+    EVENT E1 WHERE (
+        SUBJECT  = medico,
+        RESOURCE  expediente_clinico,
+        LOCATION = consultorio,
+        TIME     = *,
+        ACTION   = leer
+    );
+}

@@ -1,0 +1,3395 @@
+[
+  {
+    "policy_id": "pol-001",
+    "description": "Permite que 'administrador_cluster' realice 'escribir' sobre 'quota_almacenamiento' en 'zona-b' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-001",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-002",
+    "description": "Permite que 'administrador_cluster' realice 'purgar' sobre 'snapshot_intermedio' en 'region-borde' durante conexion de duracion 'muy_corta'.",
+    "events": [
+      {
+        "event_id": "ev-002",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado"
+    ]
+  },
+  {
+    "policy_id": "pol-003",
+    "description": "Permite que 'administrador_cluster' realice 'leer' sobre 'log_auditoria' en 'region-borde' durante conexion de duracion 'muy_corta'.",
+    "events": [
+      {
+        "event_id": "ev-003",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-004",
+    "description": "Permite que 'asistente_investigacion' realice 'leer' sobre 'snapshot_intermedio' en 'nodo-edge-2' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-004",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-005",
+    "description": "Permite que 'investigador_titular' realice 'escribir' sobre 'namespace_datos_crudos' en 'nodo-edge-2' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-005",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-006",
+    "description": "Permite que 'administrador_cluster' realice 'purgar' sobre 'metadata_sesion' en 'zona-b' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-006",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado"
+    ]
+  },
+  {
+    "policy_id": "pol-007",
+    "description": "Deniega que 'auditor_cumplimiento' realice 'aprovisionar' sobre 'namespace_datos_crudos' en 'zona-b' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-007",
+        "subject": {
+          "attribute": "rol",
+          "value": "auditor_cumplimiento"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "rol_revocado"
+    ],
+    "on_deny": "alert"
+  },
+  {
+    "policy_id": "pol-008",
+    "description": "Permite que 'asistente_investigacion' realice 'aprovisionar' sobre 'metadata_sesion' en 'nodo-edge-1' durante conexion de duracion 'muy_corta'.",
+    "events": [
+      {
+        "event_id": "ev-008",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-009",
+    "description": "Deniega que 'auditor_cumplimiento' realice 'eliminar' sobre 'metadata_sesion' en 'zona-b' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-009",
+        "subject": {
+          "attribute": "rol",
+          "value": "auditor_cumplimiento"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "eliminar"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "rol_revocado"
+    ],
+    "on_deny": "escalate"
+  },
+  {
+    "policy_id": "pol-010",
+    "description": "Permite que 'servicio_limpieza' realice 'aprovisionar' sobre 'metadata_sesion' en 'zona-b' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-010",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-011",
+    "description": "Permite que 'administrador_cluster' realice 'purgar' sobre 'quota_almacenamiento' en 'zona-b' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-011",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado"
+    ]
+  },
+  {
+    "policy_id": "pol-012",
+    "description": "Permite que 'auditor_cumplimiento' realice 'leer' sobre 'metadata_sesion' en 'zona-a' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-012",
+        "subject": {
+          "attribute": "rol",
+          "value": "auditor_cumplimiento"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-013",
+    "description": "Deniega que 'auditor_cumplimiento' realice 'eliminar' sobre 'snapshot_intermedio' en 'nodo-edge-1' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-013",
+        "subject": {
+          "attribute": "rol",
+          "value": "auditor_cumplimiento"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "eliminar"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "rol_revocado"
+    ],
+    "on_deny": "escalate"
+  },
+  {
+    "policy_id": "pol-014",
+    "description": "Deniega que 'auditor_cumplimiento' realice 'aprovisionar' sobre 'metadata_sesion' en 'nodo-edge-1' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-014",
+        "subject": {
+          "attribute": "rol",
+          "value": "auditor_cumplimiento"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "rol_revocado"
+    ],
+    "on_deny": "alert"
+  },
+  {
+    "policy_id": "pol-015",
+    "description": "Permite que 'servicio_limpieza' realice 'purgar' sobre 'snapshot_intermedio' en 'nodo-edge-1' durante conexion de duracion 'muy_larga'.",
+    "events": [
+      {
+        "event_id": "ev-015",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-016",
+    "description": "Permite que 'administrador_cluster' realice 'leer' sobre 'quota_almacenamiento' en 'zona-b' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-016",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-017",
+    "description": "Permite que 'administrador_cluster' realice 'escribir' sobre 'namespace_datos_crudos' en 'zona-a' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-017",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-018",
+    "description": "Permite que 'administrador_cluster' realice 'escribir' sobre 'snapshot_intermedio' en 'region-borde' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-018",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-019",
+    "description": "Permite que 'servicio_limpieza' realice 'purgar' sobre 'log_auditoria' en 'zona-a' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-019",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-020",
+    "description": "Deniega que 'asistente_investigacion' realice 'leer' sobre 'log_auditoria' en 'nodo-edge-2' durante conexion de duracion 'mantenimiento_nocturno'.",
+    "events": [
+      {
+        "event_id": "ev-020",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mantenimiento_nocturno"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-021",
+    "description": "Deniega que 'servicio_limpieza' realice 'promover_persistente' sobre 'namespace_datos_crudos' en 'zona-a' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-021",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "promover_persistente"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "rol_revocado",
+      "sesion_terminada"
+    ],
+    "on_deny": "alert"
+  },
+  {
+    "policy_id": "pol-022",
+    "description": "Permite que 'asistente_investigacion' realice 'leer' sobre 'namespace_datos_crudos' en 'zona-a' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-022",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-023",
+    "description": "Permite que 'investigador_titular' realice 'aprovisionar' sobre 'snapshot_intermedio' en 'zona-a' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-023",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-024",
+    "description": "Deniega que 'auditor_cumplimiento' realice 'purgar' sobre 'quota_almacenamiento' en 'region-borde' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-024",
+        "subject": {
+          "attribute": "rol",
+          "value": "auditor_cumplimiento"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ],
+    "on_deny": "alert"
+  },
+  {
+    "policy_id": "pol-025",
+    "description": "Permite que 'servicio_limpieza' realice 'purgar' sobre 'quota_almacenamiento' en 'nodo-edge-1' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-025",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-026",
+    "description": "Deniega que 'servicio_limpieza' realice 'escribir' sobre 'metadata_sesion' en 'region-borde' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-026",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ],
+    "on_deny": "alert"
+  },
+  {
+    "policy_id": "pol-027",
+    "description": "Permite que 'auditor_cumplimiento' realice 'leer' sobre 'metadata_sesion' en 'region-borde' durante conexion de duracion 'muy_larga'.",
+    "events": [
+      {
+        "event_id": "ev-027",
+        "subject": {
+          "attribute": "rol",
+          "value": "auditor_cumplimiento"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-028",
+    "description": "Permite que 'asistente_investigacion' realice 'aprovisionar' sobre 'metadata_sesion' en 'zona-a' durante conexion de duracion 'muy_larga'.",
+    "events": [
+      {
+        "event_id": "ev-028",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-029",
+    "description": "Permite que 'investigador_titular' realice 'escribir' sobre 'log_auditoria' en 'zona-b' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-029",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-030",
+    "description": "Deniega que 'servicio_limpieza' realice 'eliminar' sobre 'namespace_datos_crudos' en 'zona-b' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-030",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "eliminar"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "rol_revocado"
+    ],
+    "on_deny": "escalate"
+  },
+  {
+    "policy_id": "pol-031",
+    "description": "Permite que 'asistente_investigacion' realice 'leer' sobre 'log_auditoria' en 'zona-b' durante conexion de duracion 'muy_corta'.",
+    "events": [
+      {
+        "event_id": "ev-031",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-032",
+    "description": "Permite que 'investigador_titular' realice 'leer' sobre 'metadata_sesion' en 'zona-b' durante conexion de duracion 'muy_corta'.",
+    "events": [
+      {
+        "event_id": "ev-032",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-033",
+    "description": "Permite que 'administrador_cluster' realice 'eliminar' sobre 'quota_almacenamiento' en 'nodo-edge-2' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-033",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "eliminar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": []
+  },
+  {
+    "policy_id": "pol-034",
+    "description": "Deniega que 'asistente_investigacion' realice 'eliminar' sobre 'namespace_datos_crudos' en 'region-borde' durante conexion de duracion 'muy_corta'.",
+    "events": [
+      {
+        "event_id": "ev-034",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "eliminar"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "rol_revocado"
+    ],
+    "on_deny": "escalate"
+  },
+  {
+    "policy_id": "pol-035",
+    "description": "Permite que 'administrador_cluster' realice 'eliminar' sobre 'log_auditoria' en 'nodo-edge-2' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-035",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "eliminar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": []
+  },
+  {
+    "policy_id": "pol-036",
+    "description": "Permite que 'administrador_cluster' realice 'leer' sobre 'quota_almacenamiento' en 'nodo-edge-2' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-036",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-037",
+    "description": "Deniega que 'auditor_cumplimiento' realice 'purgar' sobre 'snapshot_intermedio' en 'zona-a' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-037",
+        "subject": {
+          "attribute": "rol",
+          "value": "auditor_cumplimiento"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ],
+    "on_deny": "alert"
+  },
+  {
+    "policy_id": "pol-038",
+    "description": "Permite que 'administrador_cluster' realice 'purgar' sobre 'snapshot_intermedio' en 'nodo-edge-1' durante conexion de duracion 'muy_corta'.",
+    "events": [
+      {
+        "event_id": "ev-038",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado"
+    ]
+  },
+  {
+    "policy_id": "pol-039",
+    "description": "Permite que 'administrador_cluster' realice 'leer' sobre 'quota_almacenamiento' en 'region-borde' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-039",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-040",
+    "description": "Permite que 'asistente_investigacion' realice 'leer' sobre 'metadata_sesion' en 'nodo-edge-1' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-040",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-041",
+    "description": "Permite que 'administrador_cluster' realice 'promover_persistente' sobre 'quota_almacenamiento' en 'zona-b' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-041",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "promover_persistente"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-042",
+    "description": "Permite que 'servicio_limpieza' realice 'aprovisionar' sobre 'namespace_datos_crudos' en 'zona-b' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-042",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-043",
+    "description": "Permite que 'investigador_titular' realice 'escribir' sobre 'metadata_sesion' en 'region-borde' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-043",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-044",
+    "description": "Permite que 'investigador_titular' realice 'promover_persistente' sobre 'metadata_sesion' en 'zona-a' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-044",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "promover_persistente"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-045",
+    "description": "Permite que 'administrador_cluster' realice 'escribir' sobre 'namespace_datos_crudos' en 'region-borde' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-045",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-046",
+    "description": "Permite que 'investigador_titular' realice 'promover_persistente' sobre 'snapshot_intermedio' en 'nodo-edge-2' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-046",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "promover_persistente"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-047",
+    "description": "Permite que 'investigador_titular' realice 'purgar' sobre 'namespace_datos_crudos' en 'nodo-edge-1' durante conexion de duracion 'muy_corta'.",
+    "events": [
+      {
+        "event_id": "ev-047",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-048",
+    "description": "Permite que 'asistente_investigacion' realice 'purgar' sobre 'quota_almacenamiento' en 'nodo-edge-2' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-048",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-049",
+    "description": "Permite que 'investigador_titular' realice 'leer' sobre 'namespace_datos_crudos' en 'zona-a' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-049",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-050",
+    "description": "Permite que 'administrador_cluster' realice 'escribir' sobre 'snapshot_intermedio' en 'nodo-edge-2' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-050",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-051",
+    "description": "Permite que 'investigador_titular' realice 'aprovisionar' sobre 'log_auditoria' en 'zona-b' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-051",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-052",
+    "description": "Permite que 'servicio_limpieza' realice 'aprovisionar' sobre 'metadata_sesion' en 'nodo-edge-2' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-052",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-053",
+    "description": "Permite que 'administrador_cluster' realice 'promover_persistente' sobre 'quota_almacenamiento' en 'zona-a' durante conexion de duracion 'muy_larga'.",
+    "events": [
+      {
+        "event_id": "ev-053",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "promover_persistente"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-054",
+    "description": "Permite que 'investigador_titular' realice 'purgar' sobre 'namespace_datos_crudos' en 'zona-a' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-054",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-055",
+    "description": "Permite que 'servicio_limpieza' realice 'aprovisionar' sobre 'log_auditoria' en 'region-borde' durante conexion de duracion 'muy_larga'.",
+    "events": [
+      {
+        "event_id": "ev-055",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-056",
+    "description": "Permite que 'administrador_cluster' realice 'escribir' sobre 'quota_almacenamiento' en 'nodo-edge-2' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-056",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-057",
+    "description": "Permite que 'investigador_titular' realice 'leer' sobre 'log_auditoria' en 'nodo-edge-1' durante conexion de duracion 'muy_corta'.",
+    "events": [
+      {
+        "event_id": "ev-057",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-058",
+    "description": "Deniega que 'auditor_cumplimiento' realice 'promover_persistente' sobre 'snapshot_intermedio' en 'region-borde' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-058",
+        "subject": {
+          "attribute": "rol",
+          "value": "auditor_cumplimiento"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "promover_persistente"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "rol_revocado",
+      "sesion_terminada"
+    ],
+    "on_deny": "alert"
+  },
+  {
+    "policy_id": "pol-059",
+    "description": "Permite que 'investigador_titular' realice 'leer' sobre 'snapshot_intermedio' en 'region-borde' durante conexion de duracion 'muy_larga'.",
+    "events": [
+      {
+        "event_id": "ev-059",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-060",
+    "description": "Permite que 'investigador_titular' realice 'leer' sobre 'namespace_datos_crudos' en 'nodo-edge-2' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-060",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-061",
+    "description": "Permite que 'investigador_titular' realice 'purgar' sobre 'snapshot_intermedio' en 'nodo-edge-2' durante conexion de duracion 'muy_larga'.",
+    "events": [
+      {
+        "event_id": "ev-061",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-062",
+    "description": "Deniega que 'auditor_cumplimiento' realice 'escribir' sobre 'metadata_sesion' en 'zona-b' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-062",
+        "subject": {
+          "attribute": "rol",
+          "value": "auditor_cumplimiento"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ],
+    "on_deny": "alert"
+  },
+  {
+    "policy_id": "pol-063",
+    "description": "Permite que 'administrador_cluster' realice 'escribir' sobre 'namespace_datos_crudos' en 'nodo-edge-1' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-063",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-064",
+    "description": "Permite que 'investigador_titular' realice 'escribir' sobre 'log_auditoria' en 'zona-a' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-064",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-065",
+    "description": "Deniega que 'servicio_limpieza' realice 'escribir' sobre 'metadata_sesion' en 'nodo-edge-2' durante conexion de duracion 'muy_corta'.",
+    "events": [
+      {
+        "event_id": "ev-065",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ],
+    "on_deny": "alert"
+  },
+  {
+    "policy_id": "pol-066",
+    "description": "Deniega que 'servicio_limpieza' realice 'promover_persistente' sobre 'snapshot_intermedio' en 'nodo-edge-2' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-066",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "promover_persistente"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "rol_revocado",
+      "sesion_terminada"
+    ],
+    "on_deny": "alert"
+  },
+  {
+    "policy_id": "pol-067",
+    "description": "Permite que 'investigador_titular' realice 'aprovisionar' sobre 'namespace_datos_crudos' en 'region-borde' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-067",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-068",
+    "description": "Permite que 'servicio_limpieza' realice 'purgar' sobre 'namespace_datos_crudos' en 'zona-a' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-068",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-069",
+    "description": "Permite que 'administrador_cluster' realice 'eliminar' sobre 'log_auditoria' en 'zona-b' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-069",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "eliminar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": []
+  },
+  {
+    "policy_id": "pol-070",
+    "description": "Deniega que 'servicio_limpieza' realice 'leer' sobre 'quota_almacenamiento' en 'nodo-edge-2' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-070",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ],
+    "on_deny": "alert"
+  },
+  {
+    "policy_id": "pol-071",
+    "description": "Permite que 'administrador_cluster' realice 'aprovisionar' sobre 'quota_almacenamiento' en 'zona-a' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-071",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": []
+  },
+  {
+    "policy_id": "pol-072",
+    "description": "Permite que 'asistente_investigacion' realice 'aprovisionar' sobre 'namespace_datos_crudos' en 'zona-a' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-072",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-073",
+    "description": "Deniega que 'servicio_limpieza' realice 'promover_persistente' sobre 'namespace_datos_crudos' en 'nodo-edge-1' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-073",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "promover_persistente"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "rol_revocado",
+      "sesion_terminada"
+    ],
+    "on_deny": "alert"
+  },
+  {
+    "policy_id": "pol-074",
+    "description": "Permite que 'asistente_investigacion' realice 'escribir' sobre 'namespace_datos_crudos' en 'zona-b' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-074",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-075",
+    "description": "Permite que 'investigador_titular' realice 'aprovisionar' sobre 'namespace_datos_crudos' en 'zona-a' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-075",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-a"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-076",
+    "description": "Permite que 'asistente_investigacion' realice 'purgar' sobre 'namespace_datos_crudos' en 'nodo-edge-2' durante conexion de duracion 'mantenimiento_nocturno'.",
+    "events": [
+      {
+        "event_id": "ev-076",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mantenimiento_nocturno"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-077",
+    "description": "Permite que 'investigador_titular' realice 'purgar' sobre 'quota_almacenamiento' en 'region-borde' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-077",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-078",
+    "description": "Permite que 'administrador_cluster' realice 'purgar' sobre 'metadata_sesion' en 'nodo-edge-1' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-078",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado"
+    ]
+  },
+  {
+    "policy_id": "pol-079",
+    "description": "Permite que 'investigador_titular' realice 'purgar' sobre 'metadata_sesion' en 'region-borde' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-079",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-080",
+    "description": "Permite que 'asistente_investigacion' realice 'purgar' sobre 'metadata_sesion' en 'nodo-edge-2' durante conexion de duracion 'muy_corta'.",
+    "events": [
+      {
+        "event_id": "ev-080",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-081",
+    "description": "Permite que 'investigador_titular' realice 'aprovisionar' sobre 'namespace_datos_crudos' en 'zona-b' durante conexion de duracion 'muy_larga'.",
+    "events": [
+      {
+        "event_id": "ev-081",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-082",
+    "description": "Permite que 'investigador_titular' realice 'aprovisionar' sobre 'quota_almacenamiento' en 'nodo-edge-1' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-082",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-083",
+    "description": "Permite que 'investigador_titular' realice 'escribir' sobre 'metadata_sesion' en 'nodo-edge-1' durante conexion de duracion 'muy_corta'.",
+    "events": [
+      {
+        "event_id": "ev-083",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-084",
+    "description": "Permite que 'asistente_investigacion' realice 'aprovisionar' sobre 'metadata_sesion' en 'zona-b' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-084",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-085",
+    "description": "Deniega que 'administrador_cluster' realice 'eliminar' sobre 'metadata_sesion' en 'nodo-edge-1' durante conexion de duracion 'mantenimiento_nocturno'.",
+    "events": [
+      {
+        "event_id": "ev-085",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mantenimiento_nocturno"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "eliminar"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": []
+  },
+  {
+    "policy_id": "pol-086",
+    "description": "Permite que 'investigador_titular' realice 'aprovisionar' sobre 'namespace_datos_crudos' en 'nodo-edge-1' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-086",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-087",
+    "description": "Permite que 'investigador_titular' realice 'promover_persistente' sobre 'namespace_datos_crudos' en 'region-borde' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-087",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "promover_persistente"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-088",
+    "description": "Permite que 'auditor_cumplimiento' realice 'leer' sobre 'metadata_sesion' en 'nodo-edge-1' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-088",
+        "subject": {
+          "attribute": "rol",
+          "value": "auditor_cumplimiento"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-089",
+    "description": "Permite que 'administrador_cluster' realice 'escribir' sobre 'metadata_sesion' en 'zona-b' durante conexion de duracion 'muy_larga'.",
+    "events": [
+      {
+        "event_id": "ev-089",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-090",
+    "description": "Permite que 'administrador_cluster' realice 'aprovisionar' sobre 'quota_almacenamiento' en 'nodo-edge-2' durante conexion de duracion 'corta'.",
+    "events": [
+      {
+        "event_id": "ev-090",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_cluster"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "corta"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": []
+  },
+  {
+    "policy_id": "pol-091",
+    "description": "Permite que 'servicio_limpieza' realice 'aprovisionar' sobre 'log_auditoria' en 'zona-b' durante conexion de duracion 'muy_larga'.",
+    "events": [
+      {
+        "event_id": "ev-091",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-092",
+    "description": "Permite que 'servicio_limpieza' realice 'aprovisionar' sobre 'quota_almacenamiento' en 'region-borde' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-092",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "region-borde"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-093",
+    "description": "Deniega que 'auditor_cumplimiento' realice 'escribir' sobre 'log_auditoria' en 'zona-b' durante conexion de duracion 'mantenimiento_nocturno'.",
+    "events": [
+      {
+        "event_id": "ev-093",
+        "subject": {
+          "attribute": "rol",
+          "value": "auditor_cumplimiento"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mantenimiento_nocturno"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-094",
+    "description": "Permite que 'investigador_titular' realice 'purgar' sobre 'metadata_sesion' en 'nodo-edge-2' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-094",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "metadata_sesion"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-095",
+    "description": "Permite que 'asistente_investigacion' realice 'leer' sobre 'quota_almacenamiento' en 'nodo-edge-2' durante conexion de duracion 'larga'.",
+    "events": [
+      {
+        "event_id": "ev-095",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "leer"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-096",
+    "description": "Deniega que 'asistente_investigacion' realice 'escribir' sobre 'snapshot_intermedio' en 'nodo-edge-1' durante conexion de duracion 'mantenimiento_nocturno'.",
+    "events": [
+      {
+        "event_id": "ev-096",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mantenimiento_nocturno"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "deny",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-097",
+    "description": "Permite que 'asistente_investigacion' realice 'aprovisionar' sobre 'log_auditoria' en 'nodo-edge-2' durante conexion de duracion 'mediana'.",
+    "events": [
+      {
+        "event_id": "ev-097",
+        "subject": {
+          "attribute": "rol",
+          "value": "asistente_investigacion"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "log_auditoria"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-2"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "mediana"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-098",
+    "description": "Permite que 'investigador_titular' realice 'purgar' sobre 'quota_almacenamiento' en 'nodo-edge-1' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-098",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "quota_almacenamiento"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "purgar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "pol-099",
+    "description": "Permite que 'investigador_titular' realice 'escribir' sobre 'namespace_datos_crudos' en 'zona-b' durante conexion de duracion 'sesion_activa'.",
+    "events": [
+      {
+        "event_id": "ev-099",
+        "subject": {
+          "attribute": "rol",
+          "value": "investigador_titular"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "namespace_datos_crudos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "zona-b"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "sesion_activa"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escribir"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "almacen_eliminado",
+      "rol_revocado",
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "pol-100",
+    "description": "Permite que 'servicio_limpieza' realice 'aprovisionar' sobre 'snapshot_intermedio' en 'nodo-edge-1' durante conexion de duracion 'muy_larga'.",
+    "events": [
+      {
+        "event_id": "ev-100",
+        "subject": {
+          "attribute": "rol",
+          "value": "servicio_limpieza"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "snapshot_intermedio"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "nodo-edge-1"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "muy_larga"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "aprovisionar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  }
+]

@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "devac"
+version = "0.1.0"
+description = "DEvAC — Context-aware, event-driven access control model"
+authors = ["RicardoIbarra09"]
+packages = [{ include = "devac" }]
+
+[tool.poetry.dependencies]
+python     = ">=3.10,<4"
+pydantic   = "^2.11.4"
+networkx   = "^3.4.2"
+numpy      = "1.24.0"
+option     = "^2.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest     = "^8.0.0"
+
+[build-system]
+requires      = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

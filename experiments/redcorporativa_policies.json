@@ -1,0 +1,3068 @@
+[
+  {
+    "policy_id": "G1-001",
+    "description": "Permite interno/escritura/ssh",
+    "events": [
+      {
+        "event_id": "G1-001-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "ssh"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "G1-002",
+    "description": "Permite interno/escritura/telnet",
+    "events": [
+      {
+        "event_id": "G1-002-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "telnet"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "G1-003",
+    "description": "Permite interno/escritura/ftp",
+    "events": [
+      {
+        "event_id": "G1-003-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "ftp"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "G1-004",
+    "description": "Permite interno/escritura/backup_interno",
+    "events": [
+      {
+        "event_id": "G1-004-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "backup_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "G1-005",
+    "description": "Permite interno/escritura/config_router",
+    "events": [
+      {
+        "event_id": "G1-005-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "config_router"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "G1-006",
+    "description": "Permite interno/escritura/ssh",
+    "events": [
+      {
+        "event_id": "G1-006-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "ssh"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "G1-007",
+    "description": "Permite interno/escritura/telnet",
+    "events": [
+      {
+        "event_id": "G1-007-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "telnet"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "G1-008",
+    "description": "Permite interno/escritura/ftp",
+    "events": [
+      {
+        "event_id": "G1-008-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "ftp"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "G1-009",
+    "description": "Permite interno/escritura/backup_interno",
+    "events": [
+      {
+        "event_id": "G1-009-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "backup_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "G1-010",
+    "description": "Permite interno/escritura/config_router",
+    "events": [
+      {
+        "event_id": "G1-010-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "config_router"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "sesion_terminada"
+    ]
+  },
+  {
+    "policy_id": "G1-011",
+    "description": "Permite interno/escritura/scp",
+    "events": [
+      {
+        "event_id": "G1-011-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "scp"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G1-012",
+    "description": "Permite interno/escritura/rsync",
+    "events": [
+      {
+        "event_id": "G1-012-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "rsync"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G1-013",
+    "description": "Permite interno/escritura/smb_interno",
+    "events": [
+      {
+        "event_id": "G1-013-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "smb_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G1-014",
+    "description": "Permite interno/escritura/nfs_interno",
+    "events": [
+      {
+        "event_id": "G1-014-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "nfs_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G1-015",
+    "description": "Permite interno/escritura/rdp_interno",
+    "events": [
+      {
+        "event_id": "G1-015-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "rdp_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G1-016",
+    "description": "Permite interno/escritura/scp",
+    "events": [
+      {
+        "event_id": "G1-016-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "scp"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G1-017",
+    "description": "Permite interno/escritura/rsync",
+    "events": [
+      {
+        "event_id": "G1-017-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "rsync"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G1-018",
+    "description": "Permite interno/escritura/smb_interno",
+    "events": [
+      {
+        "event_id": "G1-018-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "smb_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G1-019",
+    "description": "Permite interno/escritura/nfs_interno",
+    "events": [
+      {
+        "event_id": "G1-019-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "nfs_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G1-020",
+    "description": "Permite interno/escritura/rdp_interno",
+    "events": [
+      {
+        "event_id": "G1-020-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "rdp_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escritura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G2-001",
+    "description": "Permite interno/consulta/http",
+    "events": [
+      {
+        "event_id": "G2-001-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "http"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "G2-002",
+    "description": "Permite interno/consulta/smtp",
+    "events": [
+      {
+        "event_id": "G2-002-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "smtp"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "G2-003",
+    "description": "Permite interno/consulta/ftp",
+    "events": [
+      {
+        "event_id": "G2-003-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "ftp"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "G2-004",
+    "description": "Permite interno/consulta/dns_interno",
+    "events": [
+      {
+        "event_id": "G2-004-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "dns_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "G2-005",
+    "description": "Permite interno/consulta/monitor_interno",
+    "events": [
+      {
+        "event_id": "G2-005-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "monitor_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "G2-006",
+    "description": "Permite interno/consulta/http",
+    "events": [
+      {
+        "event_id": "G2-006-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "http"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "G2-007",
+    "description": "Permite interno/consulta/smtp",
+    "events": [
+      {
+        "event_id": "G2-007-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "smtp"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "G2-008",
+    "description": "Permite interno/consulta/ftp",
+    "events": [
+      {
+        "event_id": "G2-008-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "ftp"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "G2-009",
+    "description": "Permite interno/consulta/dns_interno",
+    "events": [
+      {
+        "event_id": "G2-009-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "dns_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "G2-010",
+    "description": "Permite interno/consulta/monitor_interno",
+    "events": [
+      {
+        "event_id": "G2-010-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "monitor_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "rol_revocado"
+    ]
+  },
+  {
+    "policy_id": "G2-011",
+    "description": "Permite interno/consulta/http",
+    "events": [
+      {
+        "event_id": "G2-011-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "http"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G2-012",
+    "description": "Permite interno/consulta/smtp",
+    "events": [
+      {
+        "event_id": "G2-012-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "smtp"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G2-013",
+    "description": "Permite interno/consulta/ftp",
+    "events": [
+      {
+        "event_id": "G2-013-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "ftp"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G2-014",
+    "description": "Permite interno/consulta/dns_interno",
+    "events": [
+      {
+        "event_id": "G2-014-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "dns_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G2-015",
+    "description": "Permite interno/consulta/monitor_interno",
+    "events": [
+      {
+        "event_id": "G2-015-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "monitor_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G2-016",
+    "description": "Permite interno/consulta/http",
+    "events": [
+      {
+        "event_id": "G2-016-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "http"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G2-017",
+    "description": "Permite interno/consulta/smtp",
+    "events": [
+      {
+        "event_id": "G2-017-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "smtp"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G2-018",
+    "description": "Permite interno/consulta/ftp",
+    "events": [
+      {
+        "event_id": "G2-018-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "ftp"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G2-019",
+    "description": "Permite interno/consulta/dns_interno",
+    "events": [
+      {
+        "event_id": "G2-019-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "dns_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G2-020",
+    "description": "Permite interno/consulta/monitor_interno",
+    "events": [
+      {
+        "event_id": "G2-020-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "interno"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "monitor_interno"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "consulta"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-001",
+    "description": "Permite invitado/lectura/http_443",
+    "events": [
+      {
+        "event_id": "G3-001-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "http_443"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-002",
+    "description": "Permite invitado/lectura/vpn_publica",
+    "events": [
+      {
+        "event_id": "G3-002-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "vpn_publica"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-003",
+    "description": "Permite invitado/lectura/portal_invitados",
+    "events": [
+      {
+        "event_id": "G3-003-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "portal_invitados"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-004",
+    "description": "Permite invitado/lectura/wifi_visitas",
+    "events": [
+      {
+        "event_id": "G3-004-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "wifi_visitas"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-005",
+    "description": "Permite invitado/lectura/dns_publico",
+    "events": [
+      {
+        "event_id": "G3-005-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "dns_publico"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-006",
+    "description": "Permite invitado/lectura/http_443",
+    "events": [
+      {
+        "event_id": "G3-006-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "http_443"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-007",
+    "description": "Permite invitado/lectura/vpn_publica",
+    "events": [
+      {
+        "event_id": "G3-007-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "vpn_publica"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-008",
+    "description": "Permite invitado/lectura/portal_invitados",
+    "events": [
+      {
+        "event_id": "G3-008-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "portal_invitados"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-009",
+    "description": "Permite invitado/lectura/wifi_visitas",
+    "events": [
+      {
+        "event_id": "G3-009-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "wifi_visitas"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-010",
+    "description": "Permite invitado/lectura/dns_publico",
+    "events": [
+      {
+        "event_id": "G3-010-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "dns_publico"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-011",
+    "description": "Permite invitado/lectura/http_443",
+    "events": [
+      {
+        "event_id": "G3-011-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "http_443"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-012",
+    "description": "Permite invitado/lectura/vpn_publica",
+    "events": [
+      {
+        "event_id": "G3-012-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "vpn_publica"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-013",
+    "description": "Permite invitado/lectura/portal_invitados",
+    "events": [
+      {
+        "event_id": "G3-013-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "portal_invitados"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-014",
+    "description": "Permite invitado/lectura/wifi_visitas",
+    "events": [
+      {
+        "event_id": "G3-014-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "wifi_visitas"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-015",
+    "description": "Permite invitado/lectura/dns_publico",
+    "events": [
+      {
+        "event_id": "G3-015-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "dns_publico"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-016",
+    "description": "Permite invitado/lectura/http_443",
+    "events": [
+      {
+        "event_id": "G3-016-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "http_443"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-017",
+    "description": "Permite invitado/lectura/vpn_publica",
+    "events": [
+      {
+        "event_id": "G3-017-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "vpn_publica"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-018",
+    "description": "Permite invitado/lectura/portal_invitados",
+    "events": [
+      {
+        "event_id": "G3-018-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "portal_invitados"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-019",
+    "description": "Permite invitado/lectura/wifi_visitas",
+    "events": [
+      {
+        "event_id": "G3-019-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "wifi_visitas"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G3-020",
+    "description": "Permite invitado/lectura/dns_publico",
+    "events": [
+      {
+        "event_id": "G3-020-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "invitado"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "dns_publico"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "lectura"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G4-001",
+    "description": "Deniega anonimo_externo/tcp_sospechoso/puerto_22",
+    "events": [
+      {
+        "event_id": "G4-001-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "puerto_22"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "tcp_sospechoso"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-002",
+    "description": "Deniega anonimo_externo/escaneo_puertos/puerto_3389",
+    "events": [
+      {
+        "event_id": "G4-002-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "puerto_3389"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escaneo_puertos"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-003",
+    "description": "Deniega anonimo_externo/intento_fuerza_bruta/puerto_445",
+    "events": [
+      {
+        "event_id": "G4-003-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "puerto_445"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "intento_fuerza_bruta"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-004",
+    "description": "Deniega anonimo_externo/conexion_no_autorizada/rango_1-1024",
+    "events": [
+      {
+        "event_id": "G4-004-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "rango_1-1024"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "conexion_no_autorizada"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-005",
+    "description": "Deniega anonimo_externo/tcp_sospechoso/servicio_desconocido",
+    "events": [
+      {
+        "event_id": "G4-005-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "servicio_desconocido"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "tcp_sospechoso"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-006",
+    "description": "Deniega anonimo_externo/escaneo_puertos/puerto_22",
+    "events": [
+      {
+        "event_id": "G4-006-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "puerto_22"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escaneo_puertos"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-007",
+    "description": "Deniega anonimo_externo/intento_fuerza_bruta/puerto_3389",
+    "events": [
+      {
+        "event_id": "G4-007-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "puerto_3389"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "intento_fuerza_bruta"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-008",
+    "description": "Deniega anonimo_externo/conexion_no_autorizada/puerto_445",
+    "events": [
+      {
+        "event_id": "G4-008-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "puerto_445"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "conexion_no_autorizada"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-009",
+    "description": "Deniega anonimo_externo/tcp_sospechoso/rango_1-1024",
+    "events": [
+      {
+        "event_id": "G4-009-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "rango_1-1024"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "tcp_sospechoso"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-010",
+    "description": "Deniega anonimo_externo/escaneo_puertos/servicio_desconocido",
+    "events": [
+      {
+        "event_id": "G4-010-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "servicio_desconocido"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escaneo_puertos"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-011",
+    "description": "Deniega anonimo_externo/intento_fuerza_bruta/puerto_22",
+    "events": [
+      {
+        "event_id": "G4-011-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "puerto_22"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "intento_fuerza_bruta"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-012",
+    "description": "Deniega anonimo_externo/conexion_no_autorizada/puerto_3389",
+    "events": [
+      {
+        "event_id": "G4-012-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "puerto_3389"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "conexion_no_autorizada"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-013",
+    "description": "Deniega anonimo_externo/tcp_sospechoso/puerto_445",
+    "events": [
+      {
+        "event_id": "G4-013-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "puerto_445"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "tcp_sospechoso"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-014",
+    "description": "Deniega anonimo_externo/escaneo_puertos/rango_1-1024",
+    "events": [
+      {
+        "event_id": "G4-014-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "rango_1-1024"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escaneo_puertos"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-015",
+    "description": "Deniega anonimo_externo/intento_fuerza_bruta/servicio_desconocido",
+    "events": [
+      {
+        "event_id": "G4-015-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "servicio_desconocido"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "intento_fuerza_bruta"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-016",
+    "description": "Deniega anonimo_externo/conexion_no_autorizada/puerto_22",
+    "events": [
+      {
+        "event_id": "G4-016-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "puerto_22"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "conexion_no_autorizada"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-017",
+    "description": "Deniega anonimo_externo/tcp_sospechoso/puerto_3389",
+    "events": [
+      {
+        "event_id": "G4-017-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "puerto_3389"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "tcp_sospechoso"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-018",
+    "description": "Deniega anonimo_externo/escaneo_puertos/puerto_445",
+    "events": [
+      {
+        "event_id": "G4-018-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "puerto_445"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "escaneo_puertos"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-019",
+    "description": "Deniega anonimo_externo/intento_fuerza_bruta/rango_1-1024",
+    "events": [
+      {
+        "event_id": "G4-019-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "rango_1-1024"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "intento_fuerza_bruta"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G4-020",
+    "description": "Deniega anonimo_externo/conexion_no_autorizada/servicio_desconocido",
+    "events": [
+      {
+        "event_id": "G4-020-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "anonimo_externo"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "servicio_desconocido"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_externa"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "conexion_no_autorizada"
+        }
+      }
+    ],
+    "effect": "deny"
+  },
+  {
+    "policy_id": "G5-001",
+    "description": "Permite administrador_red/configurar/switch_core",
+    "events": [
+      {
+        "event_id": "G5-001-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "switch_core"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "configurar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "politica_actualizada"
+    ]
+  },
+  {
+    "policy_id": "G5-002",
+    "description": "Permite administrador_red/reiniciar/router_borde",
+    "events": [
+      {
+        "event_id": "G5-002-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "router_borde"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "reiniciar"
+        }
+      }
+    ],
+    "effect": "allow",
+    "reconfigure_on": [
+      "politica_actualizada"
+    ]
+  },
+  {
+    "policy_id": "G5-003",
+    "description": "Permite administrador_red/configurar/firewall_perimetral",
+    "events": [
+      {
+        "event_id": "G5-003-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "firewall_perimetral"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "configurar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-004",
+    "description": "Permite administrador_red/reiniciar/vlan_datos",
+    "events": [
+      {
+        "event_id": "G5-004-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "vlan_datos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "reiniciar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-005",
+    "description": "Permite administrador_red/configurar/balanceador",
+    "events": [
+      {
+        "event_id": "G5-005-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "balanceador"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "configurar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-006",
+    "description": "Permite administrador_red/reiniciar/switch_core",
+    "events": [
+      {
+        "event_id": "G5-006-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "switch_core"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "reiniciar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-007",
+    "description": "Permite administrador_red/configurar/router_borde",
+    "events": [
+      {
+        "event_id": "G5-007-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "router_borde"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "configurar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-008",
+    "description": "Permite administrador_red/reiniciar/firewall_perimetral",
+    "events": [
+      {
+        "event_id": "G5-008-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "firewall_perimetral"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "reiniciar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-009",
+    "description": "Permite administrador_red/configurar/vlan_datos",
+    "events": [
+      {
+        "event_id": "G5-009-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "vlan_datos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "configurar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-010",
+    "description": "Permite administrador_red/reiniciar/balanceador",
+    "events": [
+      {
+        "event_id": "G5-010-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "balanceador"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "reiniciar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-011",
+    "description": "Permite administrador_red/configurar/switch_core",
+    "events": [
+      {
+        "event_id": "G5-011-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "switch_core"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "configurar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-012",
+    "description": "Permite administrador_red/reiniciar/router_borde",
+    "events": [
+      {
+        "event_id": "G5-012-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "router_borde"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "reiniciar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-013",
+    "description": "Permite administrador_red/configurar/firewall_perimetral",
+    "events": [
+      {
+        "event_id": "G5-013-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "firewall_perimetral"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "configurar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-014",
+    "description": "Permite administrador_red/reiniciar/vlan_datos",
+    "events": [
+      {
+        "event_id": "G5-014-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "vlan_datos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "reiniciar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-015",
+    "description": "Permite administrador_red/configurar/balanceador",
+    "events": [
+      {
+        "event_id": "G5-015-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "balanceador"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "configurar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-016",
+    "description": "Permite administrador_red/reiniciar/switch_core",
+    "events": [
+      {
+        "event_id": "G5-016-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "switch_core"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "reiniciar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-017",
+    "description": "Permite administrador_red/configurar/router_borde",
+    "events": [
+      {
+        "event_id": "G5-017-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "router_borde"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "configurar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-018",
+    "description": "Permite administrador_red/reiniciar/firewall_perimetral",
+    "events": [
+      {
+        "event_id": "G5-018-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "firewall_perimetral"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "reiniciar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-019",
+    "description": "Permite administrador_red/configurar/vlan_datos",
+    "events": [
+      {
+        "event_id": "G5-019-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "vlan_datos"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "configurar"
+        }
+      }
+    ],
+    "effect": "allow"
+  },
+  {
+    "policy_id": "G5-020",
+    "description": "Permite administrador_red/reiniciar/balanceador",
+    "events": [
+      {
+        "event_id": "G5-020-e1",
+        "subject": {
+          "attribute": "rol",
+          "value": "administrador_red"
+        },
+        "asset": {
+          "attribute": "recurso",
+          "value": "balanceador"
+        },
+        "space": {
+          "attribute": "ubicacion",
+          "value": "red_interna"
+        },
+        "time": {
+          "attribute": "rango_horario",
+          "value": "*"
+        },
+        "action": {
+          "attribute": "accion",
+          "value": "reiniciar"
+        }
+      }
+    ],
+    "effect": "allow"
+  }
+]

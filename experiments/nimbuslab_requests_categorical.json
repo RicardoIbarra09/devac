@@ -1,0 +1,4402 @@
+[
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mantenimiento_nocturno"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "auditor_cumplimiento"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "promover_persistente"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "eliminar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "region-borde"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "mediana"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "log_auditoria"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "corta"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "escribir"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "servicio_limpieza"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "snapshot_intermedio"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-1"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "purgar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "investigador_titular"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "namespace_datos_crudos"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "nodo-edge-2"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "asistente_investigacion"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "metadata_sesion"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-a"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "muy_larga"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "aprovisionar"
+    }
+  },
+  {
+    "subject": {
+      "attribute": "rol",
+      "value": "administrador_cluster"
+    },
+    "asset": {
+      "attribute": "recurso",
+      "value": "quota_almacenamiento"
+    },
+    "space": {
+      "attribute": "ubicacion",
+      "value": "zona-b"
+    },
+    "time": {
+      "attribute": "rango_horario",
+      "value": "sesion_activa"
+    },
+    "action": {
+      "attribute": "accion",
+      "value": "leer"
+    }
+  }
+]
