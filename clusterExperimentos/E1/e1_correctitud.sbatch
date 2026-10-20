@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=e1_correctitud
 #SBATCH --array=0-1                 # 0=W1 NimbusLab, 1=W2 red corporativa
-#SBATCH --partition=gold            # confirmar con `sinfo`
+#SBATCH --partition=gold_noIB            # confirmar con `sinfo`
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
@@ -22,7 +22,7 @@ WORKLOAD_FILES=("experiments/nimbuslab_policies.json" "experiments/redcorporativ
 # ------------------------------------------------------------------------------
 
 # Cuando se manda con sbatch, el script se copia a /var/spool: usar la ruta real
-source "${CLUSTER_DIR:-$HOME/devac_cluster}/common.sh"
+source "${CLUSTER_DIR:-$HOME/devac/clusterExperimentos/E1}/common.sh"
 check_env
 
 IDX="${SLURM_ARRAY_TASK_ID:-0}"
@@ -32,7 +32,7 @@ POL="$DEVAC_DIR/${WORKLOAD_FILES[$IDX]}"
 # Pilotaje: PILOT=1 sbatch e1_correctitud.sbatch  ->  corrida corta para validar el flujo
 if [ "${PILOT:-0}" = "1" ]; then SEEDS="1"; N_REQUESTS=500; fi
 
-OUT="$RESULTS_DIR/e1/${SLURM_JOB_ID:-local}"   # un directorio por envio
+OUT="$RESULTS_DIR/e1/${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID:-local}}"   # un directorio por envio
 mkdir -p "$OUT" "$AGG_DIR/e1"
 
 log "E1 carga=$WL politicas=$POL semillas=[$SEEDS] n=$N_REQUESTS nodo=$(hostname) commit=$DEVAC_COMMIT"

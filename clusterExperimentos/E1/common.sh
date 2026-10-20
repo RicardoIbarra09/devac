@@ -7,16 +7,16 @@
 # [AJUSTAR] donde esta el demo (la carpeta que contiene el paquete "devac/" y "experiments/")
 export DEVAC_DIR="${DEVAC_DIR:-$HOME/devac}"
 # [AJUSTAR] datos crudos de corridas (SSD, rapido) y agregados (HOME, respaldado)
-export SCRATCH_BASE="${SCRATCH_BASE:-${SCRATCH:-/scratch/${USER:-$(id -un)}}}"
+export SCRATCH_BASE="${SCRATCH_BASE:-$HOME}"
 export RESULTS_DIR="${RESULTS_DIR:-$SCRATCH_BASE/devac_resultados}"
 export AGG_DIR="${AGG_DIR:-$HOME/devac_agregados}"
 # [AJUSTAR] directorio con estos scripts (run_e1.py, ...)
-export CLUSTER_DIR="${CLUSTER_DIR:-$HOME/devac_cluster}"
+export CLUSTER_DIR="${CLUSTER_DIR:-$HOME/devac/clusterExperimentos/E1}"
 
 # --- Python -----------------------------------------------------------------
 # [AJUSTAR] modulo o venv. Descomenta lo que aplique (ver `module avail python`).
 # module purge && module load python/3.12
-# source "$HOME/venvs/devac/bin/activate"
+source "$HOME/venvs/devac/bin/activate"
 export PYTHONPATH="$DEVAC_DIR:${PYTHONPATH:-}"
 export PYTHONHASHSEED=0          # reproducibilidad del orden de conjuntos/diccionarios entre corridas
 export PYTHONUNBUFFERED=1        # log en tiempo real en el .out de Slurm
