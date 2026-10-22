@@ -17,6 +17,9 @@ N_VALUES=(100 500 1000 2000 5000 10000 20000)
 SEED="${SEED:-1}"
 N_WARMUP="${N_WARMUP:-1000}"
 N_MEASURE="${N_MEASURE:-2000}"
+# Variante de W4: MODE=uniforme (W4-U) o MODE=estructurada con P_MIX (W4-E)
+MODE="${MODE:-uniforme}"
+P_MIX="${P_MIX:-0.1}"
 EXTRA_ARGS="${EXTRA_ARGS:-}"
 # ------------------------------------------------------------------------------
 
@@ -35,12 +38,13 @@ if [ "${PILOT:-0}" = "1" ]; then REPS=3; N_WARMUP=200; N_MEASURE=300; fi
 OUT="$RESULTS_DIR/e2/${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID:-local}}"
 mkdir -p "$OUT" "$AGG_DIR/e2"
 
-log "E2 n=$N semilla=$SEED reps=$REPS medidas=$N_MEASURE nodo=$(hostname) commit=$DEVAC_COMMIT pin='$PIN'"
+log "E2 modo=$MODE p_mix=$P_MIX n=$N semilla=$SEED reps=$REPS medidas=$N_MEASURE nodo=$(hostname) commit=$DEVAC_COMMIT pin='$PIN'"
 
 $PIN python3 "$E2_DIR/run_e2.py" \
   --n "$N" --seed "$SEED" --reps "$REPS" \
+  --mode "$MODE" --p-mix "$P_MIX" \
   --n-warmup "$N_WARMUP" --n-measure "$N_MEASURE" \
   --out-dir "$OUT" $EXTRA_ARGS
 
-cp "$OUT/e2_n${N}_s${SEED}.csv" "$OUT/e2_n${N}_s${SEED}_meta.json" "$AGG_DIR/e2/"
+cp "$OUT"/e2_*n"${N}"_s"${SEED}".csv "$OUT"/e2_*n"${N}"_s"${SEED}"_meta.json "$AGG_DIR/e2/"
 log "E2 n=$N terminado -> $OUT"

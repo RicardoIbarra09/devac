@@ -17,7 +17,8 @@ Para un tamano n y una semilla:
      crudas en .npz y un meta.json.
 
 Uso:
-  python run_e2.py --n 2000 --seed 1 --reps 30 --out-dir resultados/e2
+  python run_e2.py --n 2000 --seed 1 --reps 30 --out-dir resultados/e2                 # W4-U
+  python run_e2.py --n 2000 --mode estructurada --p-mix 0.1 --out-dir resultados/e2   # W4-E0.1
 """
 import argparse
 import copy
@@ -40,7 +41,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "E1"))
 
 import run_e1  # noqa: E402  (al importarlo desactiva la exportacion GEXF)
-from gen_w4 import DEFAULTS as W4_DEFAULTS, generate_w4  # noqa: E402
+from gen_w4 import DEFAULTS as W4_DEFAULTS, MODES as W4_MODES, generate_w4, variant_label  # noqa: E402
 from devac import (  # noqa: E402
     CommunityPolicyEvaluator,
     Policy,
@@ -92,6 +93,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--n", type=int, required=True, help="Numero de eventos de la carga W4")
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--mode", choices=W4_MODES, default="uniforme", help="Variante de W4")
+    ap.add_argument("--p-mix", type=float, default=W4_DEFAULTS["p_mix"],
+                    help="Ruido entre grupos en el modo estructurado (0 = estructura perfecta)")
+    ap.add_argument("--ev-per-group", type=int, default=W4_DEFAULTS["ev_per_group"],
+                    help="Eventos por grupo latente en el modo estructurado")
     ap.add_argument("--reps", type=int, default=30)
     ap.add_argument("--n-warmup", type=int, default=1000)
     ap.add_argument("--n-measure", type=int, default=2000)
@@ -102,13 +108,16 @@ def main():
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    tag = f"e2_n{args.n}_s{args.seed}"
-    log = lambda m: print(f"[E2 n={args.n}] {m}", flush=True)
+    w4_params = {**W4_DEFAULTS, "mode": args.mode, "p_mix": args.p_mix, "ev_per_group": args.ev_per_group}
+    variant = variant_label(w4_params)
+    # La variante uniforme conserva el nombre original de los archivos (e2_n<n>_s<semilla>)
+    tag = f"e2_n{args.n}_s{args.seed}" if variant == "U" else f"e2_{variant}_n{args.n}_s{args.seed}"
+    log = lambda m: print(f"[E2 W4-{variant} n={args.n}] {m}", flush=True)
 
     # 1. Carga y estructura
-    raw = generate_w4(args.n, seed=args.seed)
+    raw = generate_w4(args.n, seed=args.seed, **w4_params)
     if args.save_policies:
-        with open(out_dir / f"w4_n{args.n}_s{args.seed}.json", "w", encoding="utf-8") as f:
+        with open(out_dir / f"w4{variant}_n{args.n}_s{args.seed}.json", "w", encoding="utf-8") as f:
             json.dump(raw, f, ensure_ascii=False)
     base = [Policy.model_validate(p) for p in raw]
     pols = copy.deepcopy(base)
@@ -117,7 +126,8 @@ def main():
     t0 = time.perf_counter()
     pbc = run_e1.build_structure(pols)
     build_s = time.perf_counter() - t0
-    log(f"estructura: {len(pbc)} comunidades en {build_s:.2f} s")
+    comm_sizes = sorted((len(v) for v in pbc.values()), reverse=True)
+    log(f"estructura: {len(pbc)} comunidades (mayor: {comm_sizes[0]} politicas) en {build_s:.2f} s")
 
     devac = CommunityPolicyEvaluator()
     devac.run(pols, pbc)
@@ -162,7 +172,7 @@ def main():
             lat_us = lat / 1000.0
             valid_steps = steps[steps >= 0]
             rows.append({
-                "n": args.n, "seed": args.seed, "rep": rep, "evaluator": name,
+                "variante": variant, "n": args.n, "seed": args.seed, "rep": rep, "evaluator": name,
                 "n_requests": len(lat),
                 "lat_mean_us": round(float(lat_us.mean()), 3),
                 "lat_p50_us": round(percentile(lat_us, 50), 3),
@@ -220,11 +230,14 @@ def main():
         "rss_pico_proceso_mb": round(peak_rss_mb, 1),
     }
     meta = {
-        "experimento": "E2", "carga": "W4", "n_eventos": args.n, "semilla": args.seed,
+        "experimento": "E2", "carga": f"W4-{variant}", "variante": variant,
+        "n_eventos": args.n, "semilla": args.seed,
         "repeticiones": args.reps, "n_calentamiento": args.n_warmup, "n_medidas": args.n_measure,
-        "parametros_w4": W4_DEFAULTS,
+        "parametros_w4": w4_params,
         "n_politicas": len(base), "n_deny": sum(p.effect == "deny" for p in base),
-        "n_comunidades": len(pbc), "construccion_s": round(build_s, 3),
+        "n_comunidades": len(pbc), "comunidad_mayor": comm_sizes[0],
+        "comunidad_mediana": comm_sizes[len(comm_sizes) // 2],
+        "construccion_s": round(build_s, 3),
         "fallos_generacion_solicitudes": failed,
         "resumen": resumen,
         "fecha_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
