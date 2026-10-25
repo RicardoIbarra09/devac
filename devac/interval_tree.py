@@ -2,6 +2,7 @@ import random
 from typing import List, Optional, Set, Tuple
 
 
+# HH:MM -> minutos, None si no es hora
 def _to_minutes(time_str: str) -> Optional[int]:
     try:
         h, m = time_str.strip().split(":")
@@ -22,12 +23,13 @@ class _Node:
         self.end = end
         self.community_id = community_id
         self.policy_id = policy_id
-        self.priority = random.random()
+        self.priority = random.random()  # prioridad aleatoria del treap
         self.left: Optional["_Node"] = None
         self.right: Optional["_Node"] = None
-        self.max_end = end
+        self.max_end = end  # mayor fin del subarbol, sirve para podar
 
 
+# recalcula max_end despues de mover nodos
 def _update(node: _Node) -> None:
     m = node.end
     if node.left is not None and node.left.max_end > m:
@@ -55,6 +57,7 @@ def _rotate_left(node: _Node) -> _Node:
     return new_root
 
 
+# insercion de bst + rotaciones por prioridad
 def _insert(node: Optional[_Node], new_node: _Node) -> _Node:
     if node is None:
         return new_node
@@ -74,12 +77,15 @@ def _insert(node: Optional[_Node], new_node: _Node) -> _Node:
 
 
 def _query_point(node: Optional[_Node], point: int, out: List[_Node]) -> None:
+    # nada aqui abajo puede contener el punto
     if node is None or node.max_end < point:
-        return  # todo el subarbol queda descartado: ningun intervalo aqui puede cubrir el punto
+        return
     if node.left is not None:
         _query_point(node.left, point, out)
+    # este intervalo si lo contiene
     if node.start <= point <= node.end:
         out.append(node)
+    # a la derecha solo si el inicio no lo rebasa
     if node.start <= point and node.right is not None:
         _query_point(node.right, point, out)
 
@@ -93,22 +99,6 @@ def _inorder(node: Optional[_Node], out: List[_Node]) -> None:
 
 
 class IntervalTree:
-    """
-    Árbol de intervalos (Treap aumentado) para rangos horarios HH:MM.
-
-    Estructura: BST balanceado por prioridad aleatoria (treap), ordenado
-    por `start`, donde cada nodo guarda además `max_end` = el mayor `end`
-    de todo su subárbol. Esa cota permite podar subárboles completos
-    durante la consulta en vez de recorrer todos los intervalos cuyo
-    inicio es <= al punto buscado.
-
-    Complejidad esperada: O(log n) de altura (por las prioridades
-    aleatorias) + O(k) para reportar los k intervalos que sí contienen
-    el punto — a diferencia de un arreglo ordenado + bisección, que
-    sigue siendo O(right) donde `right` crece con n aunque pocos de
-    esos intervalos realmente se solapen con el punto.
-    """
-
     def __init__(self):
         self._root: Optional[_Node] = None
         self._count = 0
@@ -118,13 +108,8 @@ class IntervalTree:
         end = _to_minutes(end_hhmm)
         if start is None or end is None:
             return False
+        # cruza medianoche: se guarda en dos pedazos
         if start > end:
-            # Rango que cruza medianoche (p. ej. 23:00-06:00): el arbol
-            # asume intervalos bien formados (start <= end), asi que se
-            # indexa como dos segmentos normales que juntos cubren lo
-            # mismo: [start, 23:59] y [00:00, end]. Ambos nodos comparten
-            # community_id/policy_id, asi que una consulta que caiga en
-            # cualquiera de los dos encuentra el mismo evento original.
             self.insert_raw(start, 1439, community_id, policy_id)
             self.insert_raw(0, end, community_id, policy_id)
             return True
@@ -139,13 +124,11 @@ class IntervalTree:
 
         self._root = None
         self._count = 0
-        # reinsertar en orden aleatorio para evitar degenerar el treap
-        random.shuffle(kept)
+        random.shuffle(kept)  # reinsertar en orden aleatorio mantiene el arbol balanceado
         for n in kept:
             self.insert_raw(n.start, n.end, n.community_id, n.policy_id)
 
     def insert_raw(self, start: int, end: int, community_id: str, policy_id: str) -> None:
-        """Igual que insert(), pero recibe minutos ya calculados (uso interno)."""
         self._root = _insert(self._root, _Node(start, end, community_id, policy_id))
         self._count += 1
 
@@ -163,12 +146,7 @@ class IntervalTree:
             return []
         matches: List[_Node] = []
         _query_point(self._root, point, matches)
-        # Un rango que cruza medianoche vive como dos nodos (ver insert());
-        # en principio un punto solo puede caer en uno de los dos segmentos,
-        # pero se deduplica por (community_id, policy_id) de todas formas,
-        # para no depender de esa garantia si el arbol llega a usarse de
-        # otra forma mas adelante.
-        seen: set = set()
+        seen: set = set()  # un rango partido en dos no debe salir duplicado
         result: List[Tuple[str, str]] = []
         for n in matches:
             key = (n.community_id, n.policy_id)

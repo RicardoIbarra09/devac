@@ -1,25 +1,8 @@
 #!/usr/bin/env python3
-"""
-E2: latencia de decision de DEvAC contra el evaluador lineal, segun el tamano n.
+# uso:
+#   python run_e2.py --n 2000 --seed 1 --reps 30 --out-dir resultados/e2
+#   python run_e2.py --n 2000 --mode estructurada --p-mix 0.1 --out-dir resultados/e2
 
-Para un tamano n y una semilla:
-  1. Genera la carga W4 con n eventos (gen_w4.py) y construye la estructura de
-     comunidades (el tiempo de construccion se registra solo como referencia; E3 lo
-     mide con su propio protocolo).
-  2. Genera n_warmup + n_measure solicitudes (mitad con coincidencia, mitad sin ella)
-     con el mismo generador de E1, y la decision del oraculo para cada una.
-  3. Crea todos los AccessRequest ANTES de medir (pydantic queda fuera del tiempo).
-  4. Calentamiento: n_warmup solicitudes descartadas en cada evaluador.
-  5. Por cada repeticion: gc.collect(), gc desactivado durante la ventana, y se mide
-     cada solicitud por separado con perf_counter_ns(). El orden DEvAC/lineal se
-     alterna entre repeticiones para no favorecer a ninguno.
-  6. Guarda un CSV de resumen (una fila por repeticion y evaluador), las latencias
-     crudas en .npz y un meta.json.
-
-Uso:
-  python run_e2.py --n 2000 --seed 1 --reps 30 --out-dir resultados/e2                 # W4-U
-  python run_e2.py --n 2000 --mode estructurada --p-mix 0.1 --out-dir resultados/e2   # W4-E0.1
-"""
 import argparse
 import copy
 import csv
@@ -38,7 +21,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-sys.path.insert(0, str(HERE.parent / "E1"))
+sys.path.insert(0, str(HERE.parent / "E1"))  # reutiliza el generador y el oraculo de E1
 
 import run_e1  # noqa: E402  (al importarlo desactiva la exportacion GEXF)
 from gen_w4 import DEFAULTS as W4_DEFAULTS, MODES as W4_MODES, generate_w4, variant_label  # noqa: E402
@@ -53,14 +36,14 @@ def percentile(a, q):
     return float(np.percentile(a, q)) if len(a) else float("nan")
 
 
+# latencia por peticion en ns
 def measure(evaluator, requests):
-    """Latencia (ns), pasos y decision por solicitud."""
     lat = np.empty(len(requests), dtype=np.int64)
     steps = np.full(len(requests), -1, dtype=np.int64)
     decisions = []
     clock = time.perf_counter_ns
     gc.collect()
-    gc.disable()
+    gc.disable()  # sin pausas del gc durante la medicion
     try:
         for i, req in enumerate(requests):
             t0 = clock()
@@ -75,8 +58,8 @@ def measure(evaluator, requests):
     return lat, steps, decisions
 
 
+# memoria que ocupan los indices del evaluador
 def evaluator_memory_mb(pols, pbc):
-    """Memoria que reservan los indices de DEvAC al construirse (tracemalloc)."""
     pols_copy = copy.deepcopy(pols)
     pbc_copy = copy.deepcopy(pbc)
     gc.collect()
@@ -90,7 +73,7 @@ def evaluator_memory_mb(pols, pbc):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description="E2: latencia de DEvAC contra el evaluador lineal segun n")
     ap.add_argument("--n", type=int, required=True, help="Numero de eventos de la carga W4")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--mode", choices=W4_MODES, default="uniforme", help="Variante de W4")
@@ -110,11 +93,9 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     w4_params = {**W4_DEFAULTS, "mode": args.mode, "p_mix": args.p_mix, "ev_per_group": args.ev_per_group}
     variant = variant_label(w4_params)
-    # La variante uniforme conserva el nombre original de los archivos (e2_n<n>_s<semilla>)
     tag = f"e2_n{args.n}_s{args.seed}" if variant == "U" else f"e2_{variant}_n{args.n}_s{args.seed}"
     log = lambda m: print(f"[E2 W4-{variant} n={args.n}] {m}", flush=True)
 
-    # 1. Carga y estructura
     raw = generate_w4(args.n, seed=args.seed, **w4_params)
     if args.save_policies:
         with open(out_dir / f"w4{variant}_n{args.n}_s{args.seed}.json", "w", encoding="utf-8") as f:
@@ -122,7 +103,7 @@ def main():
     base = [Policy.model_validate(p) for p in raw]
     pols = copy.deepcopy(base)
 
-    run_e1.random.seed(args.seed)  # Louvain usa el random global del proceso
+    run_e1.random.seed(args.seed)  # louvain usa random, se fija para repetir
     t0 = time.perf_counter()
     pbc = run_e1.build_structure(pols)
     build_s = time.perf_counter() - t0
@@ -133,7 +114,6 @@ def main():
     devac.run(pols, pbc)
     linear = TraditionalPolicyEvaluator(copy.deepcopy(pols))
 
-    # 2. Solicitudes y oraculo
     t0 = time.perf_counter()
     compiled = run_e1.compile_policies(base)
     total = args.n_warmup + args.n_measure
@@ -144,7 +124,7 @@ def main():
         truth = [run_e1.oracle_decision(compiled, v)[0] for v in meas_vals]
     log(f"solicitudes y oraculo en {time.perf_counter() - t0:.1f} s (fallos de generacion: {failed})")
 
-    # 3. AccessRequest creados antes de medir (una lista por evaluador)
+    # los AccessRequest se crean antes de medir, pydantic queda fuera del tiempo
     reqs = {
         "devac": ([run_e1.to_access_request(v) for v in warm_vals],
                   [run_e1.to_access_request(v) for v in meas_vals]),
@@ -153,15 +133,15 @@ def main():
     }
     evaluators = {"devac": devac, "lineal": linear}
 
-    # 4. Calentamiento
     for name, ev in evaluators.items():
+        # calentamiento
         for r in reqs[name][0]:
             ev.evaluate(r)
 
-    # 5. Repeticiones
     rows, raw_lat, raw_steps = [], {}, {}
     first_decisions = {}
     for rep in range(args.reps):
+        # se alterna el orden para no favorecer a ninguno
         order = ["devac", "lineal"] if rep % 2 == 0 else ["lineal", "devac"]
         for name in order:
             lat, steps, dec = measure(evaluators[name], reqs[name][1])
@@ -187,7 +167,6 @@ def main():
             p50 = {r["evaluator"]: r["lat_p50_us"] for r in d}
             log(f"rep {rep + 1}/{args.reps}: p50 devac={p50['devac']} us, lineal={p50['lineal']} us")
 
-    # Speedup por repeticion (latencia media y p50 del lineal entre las de DEvAC)
     by_rep = {}
     for r in rows:
         by_rep.setdefault(r["rep"], {})[r["evaluator"]] = r
@@ -196,7 +175,6 @@ def main():
         r["speedup_mean"] = round(pair["lineal"]["lat_mean_us"] / pair["devac"]["lat_mean_us"], 3)
         r["speedup_p50"] = round(pair["lineal"]["lat_p50_us"] / pair["devac"]["lat_p50_us"], 3)
 
-    # 6. Concordancia y memoria
     d_dev, d_lin = first_decisions["devac"], first_decisions["lineal"]
     agree_lin = 100.0 * sum(a == b for a, b in zip(d_dev, d_lin)) / len(d_dev)
     agree_orc = (100.0 * sum(a == b for a, b in zip(d_dev, truth)) / len(d_dev)) if truth else None
@@ -210,6 +188,7 @@ def main():
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
         w.writerows(rows)
+    # latencias crudas por si hay que recalcular algo
     np.savez_compressed(out_dir / f"{tag}_raw.npz",
                         **{f"lat_{k}": v for k, v in raw_lat.items()},
                         **{f"steps_{k}": v for k, v in raw_steps.items()})

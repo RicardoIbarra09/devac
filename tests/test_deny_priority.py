@@ -1,9 +1,3 @@
-"""
-Pruebas de "deny gana" en CommunityPolicyEvaluator (indice value_to_comms_deny
-+ interval_tree_deny, consultado antes del recorrido normal en evaluate())
-y en TraditionalPolicyEvaluator (politicas deny ordenadas antes que las allow
-en __init__). Ver devac/evaluator.py y devac/baseline/evaluator.py.
-"""
 from devac.models import Policy, Event, AttributeComponent, AccessRequest
 from devac.evaluator import CommunityPolicyEvaluator
 from devac.baseline.evaluator import TraditionalPolicyEvaluator
@@ -34,18 +28,13 @@ REQUEST = AccessRequest(
 )
 
 
-# ---------------------------------------------------------------------
-# Caso 1: conflicto entre comunidades DISTINTAS (el peor caso: ni
-# audit_and_mitigate lo detecta, porque solo compara dentro de cada
-# comunidad / cruza comodines significativos entre comunidades).
-# ---------------------------------------------------------------------
-
 def test_deny_gana_entre_comunidades_distintas_devac():
     p_allow = Policy(policy_id="P_ALLOW", description="permite", effect="allow",
                       events=[make_event("E_ALLOW")])
     p_deny = Policy(policy_id="P_DENY", description="niega", effect="deny",
                      events=[make_event("E_DENY")])
 
+    # separadas a mano: el audit no las compararia
     pbc = {"comm_allow": ["P_ALLOW"], "comm_deny": ["P_DENY"]}
     ce = CommunityPolicyEvaluator()
     ce.run([p_allow, p_deny], pbc)
@@ -62,6 +51,7 @@ def test_deny_gana_entre_comunidades_distintas_lineal_sin_importar_orden():
     p_deny = Policy(policy_id="P_DENY", description="niega", effect="deny",
                      events=[make_event("E_DENY")])
 
+    # el orden del json no debe importar
     for order in ([p_allow, p_deny], [p_deny, p_allow]):
         te = TraditionalPolicyEvaluator(list(order))
         result = te.evaluate(REQUEST.model_copy(deep=True))
@@ -71,21 +61,13 @@ def test_deny_gana_entre_comunidades_distintas_lineal_sin_importar_orden():
         assert "eval_time" in result
 
 
-# ---------------------------------------------------------------------
-# Caso 2: conflicto dentro de la MISMA comunidad (audit_and_mitigate ya
-# lo resolvia reordenando; ahora evaluate() debe garantizarlo igual sin
-# depender de haber corrido el audit).
-# ---------------------------------------------------------------------
-
 def test_deny_gana_dentro_de_la_misma_comunidad_devac():
     p_allow = Policy(policy_id="P_ALLOW", description="permite", effect="allow",
                       events=[make_event("E_ALLOW")])
     p_deny = Policy(policy_id="P_DENY", description="niega", effect="deny",
                      events=[make_event("E_DENY")])
 
-    # orden de lista deliberadamente "allow primero" dentro de la misma
-    # comunidad -- sin el indice deny, "primer match gana" devolveria allow.
-    pbc = {"comm_1": ["P_ALLOW", "P_DENY"]}
+    pbc = {"comm_1": ["P_ALLOW", "P_DENY"]}  # allow primero en la lista
     ce = CommunityPolicyEvaluator()
     ce.run([p_allow, p_deny], pbc)
 
@@ -93,11 +75,6 @@ def test_deny_gana_dentro_de_la_misma_comunidad_devac():
     assert result["result"] == "deny"
     assert result["policy_id"] == "P_DENY"
 
-
-# ---------------------------------------------------------------------
-# Caso 3: sin conflicto -- un deny que NO matchea la solicitud no debe
-# producir un falso deny ni alterar el resultado allow esperado.
-# ---------------------------------------------------------------------
 
 def test_sin_conflicto_allow_normal_no_se_ve_afectado():
     p_allow = Policy(policy_id="P_ALLOW", description="permite", effect="allow",

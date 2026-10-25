@@ -3,7 +3,14 @@ name = "devac"
 version = "0.1.0"
 description = "DEvAC — Context-aware, event-driven access control model"
 authors = ["RicardoIbarra09"]
-packages = [{ include = "devac" }]
+packages = [
+    { include = "devac" },
+    { include = "devac_api" },
+    { include = "devac_client" },
+]
+
+[tool.poetry.scripts]
+devac-loadgen = "devac_client.loadgen:main"
 
 [tool.poetry.dependencies]
 python     = ">=3.10,<4"
@@ -14,6 +21,11 @@ option     = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest     = "^8.0.0"
+
+[tool.poetry.group.api.dependencies]
+fastapi = "^0.161.0"
+uvicorn = {extras = ["standard"], version = "^0.54.0"}
+httpx = "^0.28.1"
 
 [build-system]
 requires      = ["poetry-core"]

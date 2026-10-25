@@ -7,7 +7,6 @@ from pathlib import Path
 
 
 class GraphBuilder:
-
     def __init__(self):
         self.graph = None
 
@@ -18,6 +17,7 @@ class GraphBuilder:
             return a == b
 
         score = 0.0
+        # suma el peso de cada atributo que comparten
         if _eq(e1.subject.value, e2.subject.value): score += weights.get("rol", 0)
         if _eq(e1.asset.value,   e2.asset.value):   score += weights.get("recurso", 0)
         if _eq(e1.space.value,   e2.space.value):   score += weights.get("ubicacion", 0)
@@ -27,18 +27,9 @@ class GraphBuilder:
 
     def build_event_graph(self, policies: List[Policy], similarity_threshold: float = 0.3) -> nx.Graph:
         G = nx.Graph()
-        attribute_weights = self.calculate_attribute_weights(policies)
+        attribute_weights = self.calculate_attribute_weights(policies)  # pesos por entropia
 
-        # Atributos "omitibles": aquellos cuyo peso combinado (los de menor
-        # peso, acumulados) queda por debajo del umbral de similitud. Ningun
-        # par que SOLO comparta valores en estos atributos puede llegar a
-        # cruzar `similarity_threshold`, asi que se excluyen de la
-        # generacion de pares candidatos sin perder ninguna arista valida:
-        # cualquier par que si cruce el umbral necesariamente comparte
-        # tambien algun atributo fuera de este conjunto, y ese otro atributo
-        # ya genera el par por su propia cubeta. Es una poda exacta, no una
-        # aproximacion -- el grafo resultante es identico, solo mas barato
-        # de construir cuando hay atributos de baja diversidad.
+        # atributos que aunque coincidan nunca alcanzan el umbral
         omitibles = set()
         suma = 0.0
         for attr, peso in sorted(attribute_weights.items(), key=lambda kv: kv[1]):
@@ -46,7 +37,7 @@ class GraphBuilder:
                 suma += peso
                 omitibles.add(attr)
 
-        all_events_map = {}
+        all_events_map = {}  # event_id -> evento y su politica
 
         for policy in policies:
             for event in policy.events:
@@ -61,6 +52,7 @@ class GraphBuilder:
                 def _gephi(v):
                     return str(v) if isinstance(v, dict) else v
 
+                # un nodo por evento
                 G.add_node(
                     event.event_id,
                     policy_id     = policy.policy_id,
@@ -71,20 +63,18 @@ class GraphBuilder:
                     accion        = _gephi(event.action.value),
                 )
 
-        # El prefijo de la cubeta usa "tiempo", pero la clave de peso de
-        # entropia es "rango_horario" -- son dos vocabularios distintos para
-        # la misma dimension (ver nota de mapeo en dpl.py); hay que traducir
-        # para consultar `omitibles` con la clave correcta.
+        # la cubeta de tiempo se llama distinto que su peso
         _PREFIX_TO_WEIGHT_KEY = {
             "rol": "rol", "recurso": "recurso", "ubicacion": "ubicacion",
             "tiempo": "rango_horario", "accion": "accion",
         }
 
-        inverted_index = defaultdict(list)
+        inverted_index = defaultdict(list)  # valor -> eventos que lo usan
         for ev_id, data in all_events_map.items():
             ev = data["obj"]
 
             def _idx_val(prefix, val):
+                # no vale la pena indexarlo
                 if _PREFIX_TO_WEIGHT_KEY[prefix] in omitibles:
                     return
                 if isinstance(val, str):
@@ -96,8 +86,9 @@ class GraphBuilder:
             _idx_val("tiempo",    ev.time.value)
             _idx_val("accion",    ev.action.value)
 
-        processed_pairs: Set[Tuple[str, str]] = set()
+        processed_pairs: Set[Tuple[str, str]] = set()  # para no comparar dos veces el mismo par
 
+        # solo se comparan eventos de la misma cubeta
         for key, event_ids_in_bucket in inverted_index.items():
             if len(event_ids_in_bucket) < 2:
                 continue
@@ -112,11 +103,12 @@ class GraphBuilder:
                     e1 = all_events_map[id_a]["obj"]
                     e2 = all_events_map[id_b]["obj"]
                     sim = self.event_similarity(e1, e2, attribute_weights)
+                    # arista si son suficientemente parecidos
                     if sim >= similarity_threshold:
                         G.add_edge(id_a, id_b, weight=float(sim))
 
         self.graph = G
-        self.export_graph("exports/event_graph.gexf")
+        self.export_graph("exports/event_graph.gexf")  # para abrirlo en gephi
         return self.graph
 
     @staticmethod
@@ -126,6 +118,7 @@ class GraphBuilder:
         }
 
         def _str(v):
+            # in/range cuentan como un solo valor
             return v.strip().lower() if isinstance(v, str) else "__complex__"
 
         for policy in policies:
@@ -144,9 +137,11 @@ class GraphBuilder:
             counts = Counter(values)
             total = len(values)
             probabilities = [freq / total for freq in counts.values()]
+            # entropia de shannon
             entropies[attribute] = -sum(p * np.log2(p) for p in probabilities if p > 0)
 
         total_entropy = sum(entropies.values()) or 1.0
+        # normalizado para que sumen 1
         return {attr: entropies[attr] / total_entropy for attr in entropies}
 
     def export_graph(self, output_path: str, format: str = "gexf") -> None:
@@ -157,7 +152,7 @@ class GraphBuilder:
         for n, attrs in G_export.nodes(data=True):
             for k, v in list(attrs.items()):
                 if v is None or v == "" or (isinstance(v, float) and np.isnan(v)):
-                    G_export.nodes[n][k] = "NA"
+                    G_export.nodes[n][k] = "NA"  # gephi no acepta vacios
         for u, v, attrs in G_export.edges(data=True):
             for k, val in list(attrs.items()):
                 if val is None or (isinstance(val, float) and np.isnan(val)):

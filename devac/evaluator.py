@@ -7,96 +7,50 @@ from devac.interval_tree import IntervalTree, _is_time_format
 import time
 
 
-
 class CommunityPolicyEvaluator:
-    """
-    Evaluador basado en comunidades con RUTEO por atributos + Gestión Dinámica.
-
-    - índices precalculados (value_to_comms, freq)
-    - ruteo eficiente por atributos
-    - add_policy(), remove_policy(), update_policy()
-    - reconstrucción incremental de índices
-    - soporte para wildcards
-    - pesos de entropía dinámicos
-    - mitigación de Race Conditions mediante Atomic Swaps (Thread-Safe)
-    """
-
+    # nombres internos de las 5 dimensiones
     ATTRS = ["rol", "recurso", "ubicacion", "rango_horario", "accion"]
 
     def __init__(self, policies: List[Policy] = [], policies_by_community: Dict[str, List[str]] = {}):
         self.policies: Dict[str, Policy] = {p.policy_id: p for p in policies}
         self.policies_by_community = policies_by_community
 
-        # Estructuras precalculadas
+        # attr -> valor -> comunidades que lo tienen
         self.value_to_comms: Dict[str, Dict[str, Set[str]]] = {attr: defaultdict(set) for attr in self.ATTRS}
-        self.freq: Dict[str, Dict[str, Dict[str, float]]] = {}  # comm→attr->value->freq
+        # frecuencia relativa de cada valor por comunidad
+        self.freq: Dict[str, Dict[str, Dict[str, float]]] = {}
         self.events_by_comm: Dict[str, List[Event]] = {}
 
-        # Indice invertido paralelo: solo eventos de politicas con efecto
-        # "deny" (subconjunto de value_to_comms). Se consulta antes del
-        # recorrido normal en evaluate() para garantizar "deny gana" sin
-        # depender de en que comunidad cayo cada politica ni del orden de
-        # iteracion -- ver _candidate_communities()/evaluate().
+        # igual pero solo con eventos deny
         self.value_to_comms_deny: Dict[str, Dict[str, Set[str]]] = {attr: defaultdict(set) for attr in self.ATTRS}
-        # event_id -> efecto de la politica dueña (necesario para poder
-        # reconstruir value_to_comms_deny/interval_tree_deny de forma
-        # incremental, ya que events_by_comm solo guarda los Event, sin
-        # referencia a su Policy).
-        self.event_policy_effect: Dict[str, str] = {}
+        self.event_policy_effect: Dict[str, str] = {}  # event_id -> allow/deny de su politica
 
-        # Interval tree para rango_horario con formato HH:MM
-        self.interval_tree: IntervalTree = IntervalTree()
+        self.interval_tree: IntervalTree = IntervalTree()  # para rangos HH:MM
         self.interval_tree_deny: IntervalTree = IntervalTree()
 
-        # Pesos de entropía
         self.attribute_weights: Dict[str, float] = {}
 
-        # Callbacks registrados para mutaciones de política (add/update/remove)
+        # callbacks que se llaman al cambiar una politica
         self._on_policy_change: List[Callable[[], None]] = []
 
-    # ------------------------------------------------------------------
-    # HOOKS: observadores de mutaciones de política
-    # ------------------------------------------------------------------
     def register_policy_change_hook(self, fn: Callable[[Optional[Policy]], None]) -> None:
-        """
-        Registra un callback que se invoca después de cualquier mutación
-        de política (add, update, remove). Recibe la Policy afectada — la
-        versión nueva en add, la versión PRE-swap (antes de sobrescribir)
-        en update, la versión recién retirada en remove — o None si no hay
-        una política puntual asociada al cambio. En update se pasa la
-        versión anterior a propósito: si la regla vació la política
-        (events -> []), la versión nueva ya no tiene nada que un observador
-        pueda medir; la anterior sí conserva los event_id que siguen siendo
-        nodos reales del grafo.
-        """
         self._on_policy_change.append(fn)
 
     def _notify_policy_change(self, policy: Optional[Policy] = None) -> None:
         for fn in self._on_policy_change:
             fn(policy)
 
-    # ------------------------------------------------------------------
-    # OFFLINE: construir índices rápidos por comunidad
-    # ------------------------------------------------------------------
+    # construye todo desde cero
     def run(self, policies: List[Policy], policies_by_community: Dict[str, List[str]]):
-        """
-        Construye todos los índices desde cero.
-        Usar cuando se inicializa el sistema o se reconstruye completamente.
-        """
         self.policies = {p.policy_id: p for p in policies}
         self.policies_by_community = policies_by_community
 
-        # Calcular pesos dinámicos de atributos (mejora de V2)
         self.attribute_weights = GraphBuilder.calculate_attribute_weights(policies)
 
-        # Reconstruir índices completamente
         self._rebuild_all_indices()
 
     def _rebuild_all_indices(self):
-        """
-        Reconstruye todos los índices desde cero de forma segura (Atomic Swap).
-        """
-        # 1. Crear estructuras temporales (Shadow Copies)
+        # se arma todo en estructuras nuevas y al final se reemplaza
         new_value_to_comms = {attr: defaultdict(set) for attr in self.ATTRS}
         new_value_to_comms_deny = {attr: defaultdict(set) for attr in self.ATTRS}
         new_freq = {comm: {attr: defaultdict(int) for attr in self.ATTRS} for comm in self.policies_by_community}
@@ -105,7 +59,6 @@ class CommunityPolicyEvaluator:
         new_interval_tree = IntervalTree()
         new_interval_tree_deny = IntervalTree()
 
-        # 2. Llenar las estructuras temporales
         for comm, pids in self.policies_by_community.items():
             events = []
 
@@ -115,8 +68,8 @@ class CommunityPolicyEvaluator:
                     continue
                 is_deny = policy.effect == "deny"
 
+                # normaliza a minusculas antes de indexar
                 for e in policy.events:
-                    # Normalizar valores (solo strings; los dict DSL no se tocan)
                     if isinstance(e.subject.value, str): e.subject.value = e.subject.value.strip().lower()
                     if isinstance(e.asset.value,   str): e.asset.value   = e.asset.value.strip().lower()
                     if isinstance(e.space.value,   str): e.space.value   = e.space.value.strip().lower()
@@ -126,7 +79,6 @@ class CommunityPolicyEvaluator:
                     events.append(e)
                     new_event_policy_effect[e.event_id] = policy.effect
 
-                    # Expandir DSL dict y agregar todos los valores al índice invertido
                     def _idx(attr_key, val):
                         for expanded in EventMatcher.expand_value(val, attr_key):
                             new_value_to_comms[attr_key][expanded].add(comm)
@@ -139,8 +91,6 @@ class CommunityPolicyEvaluator:
                     _idx("ubicacion",    e.space.value)
                     _idx("accion",       e.action.value)
 
-                    # rango_horario: string exacto/in → índice invertido
-                    #                {"range":[...]}  → interval tree
                     time_val = e.time.value
                     if isinstance(time_val, dict) and "range" in time_val:
                         bounds = time_val["range"]
@@ -153,14 +103,13 @@ class CommunityPolicyEvaluator:
 
             new_events_by_comm[comm] = events
 
-        # 3. Convertir frecuencias absolutas a relativas
         for comm, attrs in new_freq.items():
             total_events = float(len(new_events_by_comm[comm])) or 1.0
             for attr, values in attrs.items():
                 for val in values:
                     values[val] /= total_events
 
-        # 4. INTERCAMBIO ATÓMICO (Thread-Safe)
+        # swap: los lectores ven el indice viejo o el nuevo, nunca uno a medias
         self.events_by_comm       = new_events_by_comm
         self.freq                 = new_freq
         self.value_to_comms       = new_value_to_comms
@@ -169,34 +118,26 @@ class CommunityPolicyEvaluator:
         self.interval_tree        = new_interval_tree
         self.interval_tree_deny   = new_interval_tree_deny
 
+    # reconstruye una sola comunidad tras un cambio
     def _rebuild_community_indices(self, community_id: str):
-        """
-        Reconstruye índices SOLO para una comunidad específica usando Atomic Swap.
-        """
         if community_id not in self.policies_by_community:
             return
 
         pids = self.policies_by_community[community_id]
 
-        # 1. Crear estructuras temporales locales para esta comunidad
         new_comm_freq = {attr: defaultdict(int) for attr in self.ATTRS}
         events = []
 
-        # Los event_id que esta comunidad tenia ANTES de este rebuild salen
-        # de event_policy_effect primero: si ya no estan (politica removida,
-        # vaciada o actualizada) no deben seguir marcados como deny en la
-        # reconstruccion global de mas abajo.
+        # quita los eventos que tenia antes la comunidad
         for old_e in self.events_by_comm.get(community_id, []):
             self.event_policy_effect.pop(old_e.event_id, None)
 
-        # 2. Reconstruir eventos y frecuencias
         for pid in pids:
             policy = self.policies.get(pid)
             if not policy:
                 continue
 
             for e in policy.events:
-                # Normalizar valores (solo strings)
                 if isinstance(e.subject.value, str): e.subject.value = e.subject.value.strip().lower()
                 if isinstance(e.asset.value,   str): e.asset.value   = e.asset.value.strip().lower()
                 if isinstance(e.space.value,   str): e.space.value   = e.space.value.strip().lower()
@@ -206,7 +147,6 @@ class CommunityPolicyEvaluator:
                 events.append(e)
                 self.event_policy_effect[e.event_id] = policy.effect
 
-                # Expandir DSL dict y agregar todos los valores a frecuencias
                 def _freq(attr_key, val):
                     for expanded in EventMatcher.expand_value(val, attr_key):
                         new_comm_freq[attr_key][expanded] += 1
@@ -216,31 +156,28 @@ class CommunityPolicyEvaluator:
                 _freq("ubicacion", e.space.value)
                 _freq("accion",  e.action.value)
 
-                # rango_horario
                 time_val = e.time.value
                 if isinstance(time_val, dict) and "range" in time_val:
                     bounds = time_val["range"]
                     if len(bounds) == 2:
-                        pass  # handled below by global interval_tree rebuild
+                        pass
                 else:
                     _freq("rango_horario", time_val)
 
-        # Convertir frecuencias absolutas a relativas en el temporal
         total_events = float(len(events)) or 1.0
         for attr, values in new_comm_freq.items():
             for val in values:
                 values[val] /= total_events
 
-        # Intercambio atómico de eventos y frecuencia de la comunidad
         self.events_by_comm[community_id] = events
         self.freq[community_id] = new_comm_freq
 
-        # 3. Reconstruir value_to_comms/interval_tree (normal y deny) globales
         new_value_to_comms = {attr: defaultdict(set) for attr in self.ATTRS}
         new_value_to_comms_deny = {attr: defaultdict(set) for attr in self.ATTRS}
         new_interval_tree  = IntervalTree()
         new_interval_tree_deny = IntervalTree()
 
+        # los indices globales si se rehacen completos
         for comm, comm_events in self.events_by_comm.items():
             for e in comm_events:
                 is_deny = self.event_policy_effect.get(e.event_id) == "deny"
@@ -265,17 +202,13 @@ class CommunityPolicyEvaluator:
                 else:
                     _vidx("rango_horario", time_val)
 
-        # 4. INTERCAMBIO ATÓMICO FINAL
         self.value_to_comms = new_value_to_comms
         self.value_to_comms_deny = new_value_to_comms_deny
         self.interval_tree  = new_interval_tree
         self.interval_tree_deny = new_interval_tree_deny
 
-    # ------------------------------------------------------------------
-    # GESTIÓN DINÁMICA: Añadir política
-    # ------------------------------------------------------------------
+    # agrega en caliente, sin reconstruir el grafo
     def add_policy(self, policy: Policy, auto_assign_community: bool = True):
-        # Normalizar eventos de la nueva política (solo strings)
         for e in policy.events:
             if isinstance(e.subject.value, str): e.subject.value = e.subject.value.strip().lower()
             if isinstance(e.asset.value,   str): e.asset.value   = e.asset.value.strip().lower()
@@ -283,10 +216,10 @@ class CommunityPolicyEvaluator:
             if isinstance(e.time.value,    str): e.time.value    = e.time.value.strip().lower()
             if isinstance(e.action.value,  str): e.action.value  = e.action.value.strip().lower()
 
-        # Añadir a diccionario de políticas
         self.policies[policy.policy_id] = policy
 
         if auto_assign_community:
+            # la comunidad mas parecida
             best_community = self._find_best_community_for_policy(policy)
 
             if best_community is None:
@@ -295,7 +228,7 @@ class CommunityPolicyEvaluator:
 
             self.assign_policy_to_community(policy.policy_id, best_community)
 
-        self._notify_policy_change(policy)
+        self._notify_policy_change(policy)  # avisa al monitor
 
     def assign_policy_to_community(self, policy_id: str, community_id: str):
         if community_id not in self.policies_by_community:
@@ -308,6 +241,7 @@ class CommunityPolicyEvaluator:
 
         self._rebuild_community_indices(community_id)
 
+    # suma de similitudes contra cada comunidad, gana la mayor
     def _find_best_community_for_policy(self, policy: Policy) -> str:
         best_community = None
         best_score = -1
@@ -335,7 +269,7 @@ class CommunityPolicyEvaluator:
         def overlap(c1, c2, attr):
             s1 = expanded(c1, attr)
             s2 = expanded(c2, attr)
-            return bool(s1 & s2) or "*" in s1 or "*" in s2
+            return bool(s1 & s2) or "*" in s1 or "*" in s2  # comparten valor o alguno es comodin
 
         if overlap(e1.subject, e2.subject, "rol"):
             score += self.attribute_weights.get("rol", 0.2)
@@ -350,9 +284,6 @@ class CommunityPolicyEvaluator:
 
         return score
 
-    # ------------------------------------------------------------------
-    # GESTIÓN DINÁMICA: Eliminar política
-    # ------------------------------------------------------------------
     def remove_policy(self, policy_id: str):
         if policy_id not in self.policies:
             print(f"[WARNING] Política {policy_id} no existe")
@@ -370,9 +301,6 @@ class CommunityPolicyEvaluator:
 
         print(f"[WARNING] Política {policy_id} no estaba asignada a ninguna comunidad")
 
-    # ------------------------------------------------------------------
-    # GESTIÓN DINÁMICA: Actualizar política
-    # ------------------------------------------------------------------
     def update_policy(self, updated_policy: Policy):
         pid = updated_policy.policy_id
 
@@ -387,12 +315,7 @@ class CommunityPolicyEvaluator:
             if isinstance(e.time.value,    str): e.time.value    = e.time.value.strip().lower()
             if isinstance(e.action.value,  str): e.action.value  = e.action.value.strip().lower()
 
-        # Se guarda la versión PRE-swap antes de sobrescribir: es la que un
-        # observador barato (ver ModularityMonitor._proxy_delta) necesita
-        # para pesar lo que se perdió -- p. ej. al vaciar una política
-        # (events -> []), la versión nueva ya no tiene nada que medir; la
-        # vieja sí tiene los event_id que aún son nodos reales del grafo.
-        previous_policy = self.policies.get(pid)
+        previous_policy = self.policies.get(pid)  # se guarda la version anterior para el monitor
         self.policies[pid] = updated_policy
 
         for community_id, policy_ids in self.policies_by_community.items():
@@ -404,9 +327,6 @@ class CommunityPolicyEvaluator:
 
         print(f"[WARNING] Política {pid} no estaba asignada a ninguna comunidad")
 
-    # ------------------------------------------------------------------
-    # GESTIÓN DINÁMICA: Mover política entre comunidades
-    # ------------------------------------------------------------------
     def move_policy_to_community(self, policy_id: str, target_community_id: str):
         if policy_id not in self.policies:
             print(f"[WARNING] Política {policy_id} no existe")
@@ -432,23 +352,14 @@ class CommunityPolicyEvaluator:
 
         print(f"[INFO] Política {policy_id} movida de {source_community} a {target_community_id}")
 
-    # ------------------------------------------------------------------
-    # ONLINE: identificar comunidades candidatas
-    # ------------------------------------------------------------------
+    # comunidades donde podria haber un match
     def _candidate_communities(
         self,
         request: AccessRequest,
         value_index: Dict[str, Dict[str, Set[str]]] = None,
         tree_index: IntervalTree = None,
     ) -> Set[str]:
-        """
-        Comunidades candidatas que podrían tener un evento matching.
-
-        value_index/tree_index permiten reutilizar esta misma lógica contra
-        un índice distinto al global (p. ej. value_to_comms_deny/interval_tree_deny
-        en evaluate(), para encontrar solo comunidades con un posible evento
-        deny) sin duplicar la lógica de intersección por atributo.
-        """
+        # por defecto los indices generales, en evaluate tambien se usa con los de deny
         if value_index is None:
             value_index = self.value_to_comms
         if tree_index is None:
@@ -465,24 +376,22 @@ class CommunityPolicyEvaluator:
 
         candidate_sets = []
 
-        # 4 atributos sin rango_horario → índice invertido normal
         for attr, val in vals.items():
             attr_index = value_index.get(attr, {})
             exact    = attr_index.get(val, set())
             wildcard = attr_index.get("*", set())
-            combined = exact | wildcard
+            combined = exact | wildcard  # valor exacto o comodin
+            # ningun evento acepta este valor
             if not combined:
                 return set()
             candidate_sets.append(combined)
 
-        # rango_horario: si es HH:MM usa interval tree + índice;
-        # si es categórico ("mediana", etc.) usa solo índice invertido
         rh_index   = value_index.get("rango_horario", {})
         rh_exact   = rh_index.get(time_val, set())
         rh_wildcard= rh_index.get("*", set())
 
         if _is_time_format(time_val):
-            rh_range = tree_index.query(time_val)
+            rh_range = tree_index.query(time_val)  # rangos horarios que contienen la hora
             rh_combined = rh_exact | rh_wildcard | rh_range
         else:
             rh_combined = rh_exact | rh_wildcard
@@ -491,24 +400,18 @@ class CommunityPolicyEvaluator:
             return set()
         candidate_sets.append(rh_combined)
 
-        return set.intersection(*candidate_sets)
+        return set.intersection(*candidate_sets)  # tienen que cumplir los 5 atributos
 
-    # ------------------------------------------------------------------
-    # ONLINE: score por comunidad
-    # ------------------------------------------------------------------
+    # que tan comunes son los valores de la peticion en la comunidad
     def _score_comm(self, comm: str, req_vals: Dict[str, str]) -> float:
         s = 0.0
         for attr in self.ATTRS:
             s += self.freq.get(comm, {}).get(attr, {}).get(req_vals[attr], 0.0)
         return s
 
-    # ------------------------------------------------------------------
-    # ONLINE: evaluación por comunidad
-    # ------------------------------------------------------------------
     def evaluate(self, request: AccessRequest) -> dict:
         start = time.time()
 
-        # Normalizar request
         request.subject.value = request.subject.value.strip().lower()
         request.asset.value = request.asset.value.strip().lower()
         request.space.value = request.space.value.strip().lower()
@@ -523,22 +426,16 @@ class CommunityPolicyEvaluator:
             "accion": request.action.value,
         }
 
-        # 1. Comunidades candidatas (cualquier efecto)
         candidates = self._candidate_communities(request)
 
         if not candidates:
             eval_time = time.time() - start
+            # sin candidatos: deny directo
             return {"result": "deny", "policy_id": None, "event_id": None, "eval_time": eval_time, "steps": 0}
 
         steps = 0
 
-        # 2. "Deny gana": antes del recorrido normal se agota el
-        #    subconjunto de comunidades candidatas que SI pueden tener un
-        #    evento deny matching esta solicitud (value_to_comms_deny es
-        #    siempre subconjunto de value_to_comms, asi que deny_candidates
-        #    es siempre subconjunto de candidates). Si sale vacio, esta
-        #    probado que ningun deny puede matchear y se pasa directo al
-        #    paso 3 sin gastar ningun step de mas.
+        # primero se buscan los deny, para que deny siempre gane
         deny_candidates = self._candidate_communities(request, self.value_to_comms_deny, self.interval_tree_deny)
 
         if deny_candidates:
@@ -550,10 +447,11 @@ class CommunityPolicyEvaluator:
             for comm in sorted_deny:
                 for pid in self.policies_by_community.get(comm, []):
                     policy = self.policies.get(pid)
+                    # en esta pasada solo cuentan los deny
                     if not policy or policy.effect != "deny":
                         continue
                     for event in policy.events:
-                        steps += 1
+                        steps += 1  # eventos comparados
                         if EventMatcher.match_event(event, request):
                             eval_time = time.time() - start
                             return {
@@ -564,9 +462,7 @@ class CommunityPolicyEvaluator:
                                 "steps": steps,
                             }
 
-        # 3. Recorrido normal (primer match gana). Las políticas deny de
-        #    comunidades ya agotadas sin match en el paso 2 se omiten aquí
-        #    para no volver a contarlas como step ni compararlas dos veces.
+        # luego el recorrido normal, primer match gana
         sorted_candidates = sorted(
             candidates,
             key=lambda c: self._score_comm(c, req_vals),
@@ -579,6 +475,7 @@ class CommunityPolicyEvaluator:
                 policy = self.policies.get(pid)
                 if not policy:
                     continue
+                # ya se revisaron arriba
                 if already_checked_deny and policy.effect == "deny":
                     continue
                 for event in policy.events:
@@ -593,13 +490,10 @@ class CommunityPolicyEvaluator:
                             "steps": steps,
                         }
 
-        # Agotó todas las comunidades candidatas sin encontrar match
         eval_time = time.time() - start
+        # nada aplica: deny por defecto
         return {"result": "deny", "policy_id": None, "event_id": None, "eval_time": eval_time, "steps": steps}
 
-    # ------------------------------------------------------------------
-    # UTILIDADES: Estadísticas y debugging
-    # ------------------------------------------------------------------
     def get_statistics(self) -> dict:
         stats = {
             "total_policies": len(self.policies),
@@ -637,11 +531,7 @@ class CommunityPolicyEvaluator:
 
         for pid in self.policies:
             if pid not in assigned_pids:
-                # Una política sin eventos (p. ej. tras retirarse todos por
-                # redundancia, o vaciada por una regla de reconfiguración) es
-                # inactiva por definición: no aporta nodos al grafo, así que
-                # no pertenecer a ninguna comunidad es el estado esperado,
-                # no una inconsistencia.
+                # politica vacia = inactiva, es normal que no tenga comunidad
                 if len(self.policies[pid].events) == 0:
                     continue
                 issues.append(f"Política {pid} no está asignada a ninguna comunidad")
@@ -656,4 +546,3 @@ class CommunityPolicyEvaluator:
                 issues.append(f"Comunidad {comm_id}: eventos={len(events)}, esperados={expected_count}")
 
         return issues
-

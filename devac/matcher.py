@@ -4,7 +4,6 @@ from datetime import datetime
 
 
 class EventMatcher:
-
     @staticmethod
     def is_time_in_range(policy_range: str, request_time: str) -> bool:
         try:
@@ -15,18 +14,16 @@ class EventMatcher:
         except ValueError:
             return False
 
-        start = start_time.hour * 60 + start_time.minute
+        start = start_time.hour * 60 + start_time.minute  # todo a minutos del dia
         end   = end_time.hour * 60 + end_time.minute
         point = req_time.hour * 60 + req_time.minute
 
+        # rango normal
         if start <= end:
             return start <= point <= end
-        # Rango que cruza medianoche (p. ej. 23:00-06:00): coincide si el
-        # punto cae despues de `start` (hacia la medianoche) o antes/igual
-        # a `end` (desde la medianoche hacia adelante). Ambos extremos
-        # inclusivos, igual que en el caso normal.
-        return point >= start or point <= end
+        return point >= start or point <= end  # rango que cruza medianoche (ej 23:00-06:00)
 
+    # claves con las que se indexa un valor
     @staticmethod
     def expand_value(value: Union[str, dict], attr: str) -> List[str]:
         if isinstance(value, str):
@@ -41,6 +38,7 @@ class EventMatcher:
     @staticmethod
     def _match_value(val_event: Union[str, dict], val_req: str, attr: str) -> bool:
         if isinstance(val_event, str):
+            # comodin
             if val_event == "*":
                 return True
             if attr == "rango_horario" and "-" in val_event:
@@ -49,6 +47,7 @@ class EventMatcher:
 
         if isinstance(val_event, dict):
             if "in" in val_event:
+                # lista de valores permitidos
                 allowed = [str(v).strip().lower() for v in val_event["in"]]
                 return val_req in allowed
             if "range" in val_event:
@@ -64,6 +63,7 @@ class EventMatcher:
         attr_event = event_attr.attribute.strip().lower()
         attr_req   = request_attr.attribute.strip().lower()
 
+        # las etiquetas tienen que coincidir (rol con rol, etc)
         if attr_event != attr_req:
             return False
 
@@ -72,6 +72,7 @@ class EventMatcher:
 
         return EventMatcher._match_value(val_event, val_req, attr_event)
 
+    # el evento aplica solo si coinciden las 5 dimensiones
     @staticmethod
     def match_event(event: Event, request: AccessRequest) -> bool:
         return (

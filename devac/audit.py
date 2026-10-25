@@ -1,31 +1,3 @@
-"""
-devac/audit.py — Detección y mitigación de redundancia y conflictos entre políticas.
-
-Aprovecha la partición por comunidades (ya calculada por CommunityDetector) para
-evitar comparar cada evento contra todos los demás del sistema: dentro de cada
-comunidad se comparan todos los pares (O(k^2) por comunidad, sumado O(n^2/C) en
-total en vez de O(n^2) global), y los eventos con comodín ("*") en algún atributo
-se cruzan además contra el resto de comunidades, porque un comodín puede cubrir
-eventos semánticamente lejanos que la similitud de GraphBuilder no conectaría.
-
-Redundancia: evento A cubre (⊇) o es igual a evento B, y ambos declaran el mismo
-efecto -> B es redundante, se puede retirar sin cambiar ninguna decisión.
-
-Conflicto: evento A y evento B se traslapan (comparten al menos una solicitud
-posible, incluida la contención total) pero declaran efectos distintos.
-
-Mitigación:
-  - Redundancia: se retira el evento redundante del conjunto de trabajo (no se
-    modifica el esquema de Policy/Event; solo se excluye de lo que se le pasa a
-    evaluator.run()). Queda registrado en el reporte para poder revertirlo si el
-    panorama cambia después.
-  - Conflicto: se reordena, dentro de su comunidad, la lista de policy_id para
-    que la política con el efecto "ganador" (deny por defecto) se evalúe antes
-    que la perdedora — coincide exactamente con la semántica real de
-    "primer match gana" que ya usa evaluate(), sin inventar particiones
-    geométricas de cobertura que el modelo de datos no soporta.
-"""
-
 from __future__ import annotations
 
 import copy
@@ -40,10 +12,7 @@ from devac.models import Event, Policy
 
 ATTRS = ("subject", "asset", "space", "time", "action")
 
-# Los pesos de entropía que ya calcula GraphBuilder usan las claves en
-# español de graph.py/evaluator.py; este mapa traduce a los nombres de
-# campo reales de Event (ver CLAUDE.md: son dos vocabularios distintos
-# para las mismas cinco dimensiones).
+# nombre del campo -> clave del peso de entropia
 _ATTR_TO_WEIGHT_KEY = {
     "subject": "rol", "asset": "recurso", "space": "ubicacion",
     "time": "rango_horario", "action": "accion",
@@ -52,18 +21,14 @@ _ATTR_TO_WEIGHT_KEY = {
 
 class EventRelation(Enum):
     EQUAL = "equal"
-    SUPERSET = "superset"   # e1 cubre a e2
-    SUBSET = "subset"       # e2 cubre a e1
+    SUPERSET = "superset"  # e1 cubre a e2
+    SUBSET = "subset"  # e2 cubre a e1
     OVERLAP = "overlap"
     DISJOINT = "disjoint"
 
 
+# un rango que cruza medianoche se parte en dos
 def _range_segments(lo_min, hi_min):
-    """Normaliza un rango horario (en minutos, 0..1439) a una lista de
-    segmentos bien formados (inicio <= fin). Si lo_min > hi_min, el rango
-    cruza medianoche (p. ej. 23:00-06:00) y se representa como dos
-    segmentos: [lo_min, 1439] y [0, hi_min] -- la misma particion que ya
-    usa IntervalTree.insert() para indexarlo."""
     if lo_min is None or hi_min is None:
         return []
     if lo_min <= hi_min:
@@ -71,9 +36,8 @@ def _range_segments(lo_min, hi_min):
     return [(lo_min, 1439), (0, hi_min)]
 
 
+# convierte el valor a algo comparable: wild, exact, set o range
 def _as_set_spec(value):
-    """Normaliza un valor del DSL a una forma comparable:
-    ("wild",) | ("exact", v) | ("set", frozenset) | ("range", [(lo,hi), ...])."""
     if isinstance(value, str):
         v = value.strip().lower()
         if v == "*":
@@ -88,8 +52,8 @@ def _as_set_spec(value):
     return ("exact", str(value).strip().lower())
 
 
+# a contiene todo lo que acepta b?
 def _covers(a: tuple, b: tuple) -> bool:
-    """¿El conjunto representado por 'a' contiene por completo al de 'b'?"""
     ta, tb = a[0], b[0]
     if ta == "wild":
         return True
@@ -102,7 +66,7 @@ def _covers(a: tuple, b: tuple) -> bool:
             return b[1] in a[1]
         if tb == "set":
             return b[1].issubset(a[1])
-        return False  # un conjunto discreto no puede probarse que cubre un range continuo
+        return False
     if ta == "range":
         segs_a = a[1]
         if not segs_a:
@@ -117,19 +81,16 @@ def _covers(a: tuple, b: tuple) -> bool:
             )
         if tb == "range":
             segs_b = b[1]
-            # A cubre B si CADA segmento de B queda contenido por completo
-            # dentro de ALGUN segmento de A (no basta con la union a trozos,
-            # porque un segmento de B podria quedar repartido entre dos
-            # segmentos de A sin que ninguno solo lo cubra entero).
             return bool(segs_b) and all(
+                # cada pedazo de b cabe completo en un pedazo de a
                 any(alo <= blo and bhi <= ahi for alo, ahi in segs_a)
                 for blo, bhi in segs_b
             )
     return False
 
 
+# a y b comparten al menos un valor?
 def _intersects(a: tuple, b: tuple) -> bool:
-    """¿Comparten a y b al menos un valor posible?"""
     if _covers(a, b) or _covers(b, a):
         return True
     ta, tb = a[0], b[0]
@@ -150,12 +111,11 @@ def _intersects(a: tuple, b: tuple) -> bool:
             if m is not None and any(lo <= m <= hi for lo, hi in segs):
                 return True
         return False
-    return False  # exact vs exact / exact vs set / exact vs range: ya resuelto por _covers
+    return False
 
 
+# relacion entre dos eventos mirando las 5 dimensiones
 def compare_events(e1: Event, e2: Event) -> EventRelation:
-    """Compara dos eventos atributo por atributo (conjunción de las 5 dimensiones)
-    y determina su relación de cobertura/traslape global."""
     specs1 = {a: _as_set_spec(getattr(e1, a).value) for a in ATTRS}
     specs2 = {a: _as_set_spec(getattr(e2, a).value) for a in ATTRS}
 
@@ -173,18 +133,8 @@ def compare_events(e1: Event, e2: Event) -> EventRelation:
     return EventRelation.DISJOINT
 
 
+# comodin en un atributo que si pesa
 def _has_significant_wildcard(event: Event, weights: Dict[str, float], epsilon: float) -> bool:
-    """
-    ¿Tiene el evento un comodín en algún atributo que sí pesa lo suficiente
-    como para arriesgar perder una relación entre comunidades distintas?
-
-    Un atributo con peso ~0 (casi todos los eventos usan "*" ahí, como suele
-    pasar con rango_horario) casi no influyó en cómo Louvain separó las
-    comunidades -- si dos eventos terminaron en comunidades distintas, es
-    por los atributos que sí pesan, y esos ya bastan para que sean disjuntos.
-    Cruzarlos igual solo por un comodín de bajo peso desperdicia trabajo sin
-    encontrar nada nuevo.
-    """
     for attr in ATTRS:
         if getattr(event, attr).value == "*":
             weight_key = _ATTR_TO_WEIGHT_KEY[attr]
@@ -235,27 +185,16 @@ def audit_and_mitigate(
     conflict_priority: str = "deny",
     wildcard_weight_epsilon: float = 0.02,
 ) -> Tuple[List[Policy], Dict[str, List[str]], PolicyAuditReport]:
-    """
-    Detecta y mitiga redundancia y conflictos entre políticas, aprovechando la
-    partición por comunidades para evitar comparar todo contra todo.
-
-    wildcard_weight_epsilon: un comodín en un atributo con peso de entropía
-    por debajo de este umbral no dispara el cruce entre comunidades (ver
-    _has_significant_wildcard) -- evita degenerar a O(n^2) cuando, como es
-    convención en este proyecto, la mayoría de las políticas dejan
-    rango_horario="*".
-
-    No modifica las políticas de entrada; trabaja sobre copias. Devuelve
-    (políticas limpias, comunidades posiblemente reordenadas, reporte).
-    """
     start = time.perf_counter()
     report = PolicyAuditReport()
 
+    # se trabaja sobre copias
     policies_by_id: Dict[str, Policy] = {p.policy_id: copy.deepcopy(p) for p in policies}
     weights = GraphBuilder.calculate_attribute_weights(policies)
 
     events_by_comm: Dict[str, List[Tuple[str, Event]]] = {}
-    wildcard_events: List[Tuple[str, str, Event]] = []  # (comunidad, policy_id, event)
+    # estos se cruzan tambien contra otras comunidades
+    wildcard_events: List[Tuple[str, str, Event]] = []
 
     for comm, pids in policies_by_community.items():
         bucket: List[Tuple[str, Event]] = []
@@ -269,10 +208,11 @@ def audit_and_mitigate(
                     wildcard_events.append((comm, pid, event))
         events_by_comm[comm] = bucket
 
-    redundant_marks: set = set()  # (policy_id, event_id, dominante_pid, dominante_eid)
-    processed_pairs: set = set()  # evita comparar/reportar el mismo par dos veces
+    redundant_marks: set = set()
+    processed_pairs: set = set()
 
     def process_pair(pid1: str, e1: Event, pid2: str, e2: Event) -> None:
+        # mismo par sin importar el orden
         key = tuple(sorted(((pid1, e1.event_id), (pid2, e2.event_id))))
         if key[0] == key[1] or key in processed_pairs:
             return
@@ -285,6 +225,7 @@ def audit_and_mitigate(
         effect1 = policies_by_id[pid1].effect
         effect2 = policies_by_id[pid2].effect
 
+        # se traslapan con efectos distintos: conflicto
         if effect1 != effect2:
             report.conflicts.append(PolicyConflict(
                 policy_a=pid1, event_a=e1.event_id, effect_a=effect1,
@@ -293,17 +234,13 @@ def audit_and_mitigate(
             ))
             return
 
+        # mismo efecto: el cubierto sobra
         if rel == EventRelation.SUPERSET:
             redundant_marks.add((pid2, e2.event_id, pid1, e1.event_id))
         elif rel == EventRelation.SUBSET:
             redundant_marks.add((pid1, e1.event_id, pid2, e2.event_id))
+        # duplicados: se queda el que tiene reconfigure_on, si no el de id menor
         elif rel == EventRelation.EQUAL:
-            # Duplicado exacto: ninguna cobertura manda sobre la otra, así
-            # que el desempate es por otro criterio. Primero se prefiere
-            # conservar la política con reconfigure_on no vacío -- perderla
-            # silenciosamente rompería su capacidad de reaccionar a eventos.
-            # Solo si ambas (o ninguna) lo tienen, se desempata por
-            # policy_id (determinístico, no depende de orden de iteración).
             reconf1 = bool(policies_by_id[pid1].reconfigure_on)
             reconf2 = bool(policies_by_id[pid2].reconfigure_on)
             if reconf1 and not reconf2:
@@ -316,7 +253,7 @@ def audit_and_mitigate(
                 keep_pid, keep_e, drop_pid, drop_e = pid2, e2, pid1, e1
             redundant_marks.add((drop_pid, drop_e.event_id, keep_pid, keep_e.event_id))
 
-    # --- Paso 1: dentro de cada comunidad, todos los pares ---
+    # todos contra todos dentro de cada comunidad
     for bucket in events_by_comm.values():
         for i in range(len(bucket)):
             pid1, e1 = bucket[i]
@@ -324,7 +261,7 @@ def audit_and_mitigate(
                 pid2, e2 = bucket[j]
                 process_pair(pid1, e1, pid2, e2)
 
-    # --- Paso 2: eventos con comodín, cruzados contra el resto de comunidades ---
+    # comodines contra el resto de comunidades
     for comm_w, pid_w, e_w in wildcard_events:
         for comm2, bucket in events_by_comm.items():
             if comm2 == comm_w:
@@ -332,7 +269,6 @@ def audit_and_mitigate(
             for pid2, e2 in bucket:
                 process_pair(pid_w, e_w, pid2, e2)
 
-    # --- Mitigación: redundancia -> retirar eventos dominados ---
     to_remove_by_policy: Dict[str, set] = {}
     for pid, eid, dom_pid, dom_eid in redundant_marks:
         report.redundant_events.append(RedundantEvent(
@@ -342,9 +278,9 @@ def audit_and_mitigate(
         to_remove_by_policy.setdefault(pid, set()).add(eid)
     for pid, eids in to_remove_by_policy.items():
         policy = policies_by_id[pid]
+        # quita los redundantes
         policy.events = [e for e in policy.events if e.event_id not in eids]
 
-    # --- Mitigación: conflicto -> reordenar para que gane conflict_priority ---
     policy_to_comm = {pid: comm for comm, pids in policies_by_community.items() for pid in pids}
     losers_by_comm: Dict[str, set] = {}
     for c in report.conflicts:
@@ -357,6 +293,7 @@ def audit_and_mitigate(
     new_policies_by_community = {c: list(pids) for c, pids in policies_by_community.items()}
     for comm, losers in losers_by_comm.items():
         pids = new_policies_by_community[comm]
+        # el efecto ganador queda primero en la comunidad
         new_order = sorted(pids, key=lambda p: 1 if p in losers else 0)
         if new_order != pids:
             new_policies_by_community[comm] = new_order

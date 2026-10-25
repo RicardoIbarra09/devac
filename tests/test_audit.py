@@ -28,13 +28,8 @@ def _policy(pid, subject, asset, space, time, action, effect, reconfigure_on=Non
     )
 
 
+# politicas de relleno para que la entropia no salga en cero
 def _diversity_fillers():
-    """
-    Políticas de relleno, sin relación con el caso bajo prueba, usadas para
-    que el cálculo de entropía de GraphBuilder no degenere a pesos ~0 --
-    con universos de 2 políticas casi idénticas, ningún atributo tiene
-    diversidad real y ninguna arista de similitud llegaría a formarse.
-    """
     return [
         _policy("FILLER-1", "medico_relleno", "recurso_relleno_1", "zona_relleno_1", "manana", "consultar", "allow"),
         _policy("FILLER-2", "invitado_relleno", "recurso_relleno_2", "zona_relleno_2", "noche", "auditar", "deny"),
@@ -48,10 +43,6 @@ def _build(policies):
     event_to_policy = {e.event_id: p.policy_id for p in policies for e in p.events}
     return detector.map_policies_to_communities(event_to_policy, event_to_community)
 
-
-# ---------------------------------------------------------------------------
-# compare_events — relación por pares de eventos
-# ---------------------------------------------------------------------------
 
 def test_identical_events_are_equal():
     assert compare_events(_event("a"), _event("b")) == EventRelation.EQUAL
@@ -92,10 +83,6 @@ def test_single_disjoint_attribute_makes_whole_events_disjoint():
     assert compare_events(e1, e2) == EventRelation.DISJOINT
 
 
-# ---------------------------------------------------------------------------
-# audit_and_mitigate — deteccion + mitigacion sobre un conjunto de politicas
-# ---------------------------------------------------------------------------
-
 def test_redundant_policy_is_stripped_when_dominated_by_same_effect():
     wide = _policy("P1", {"in": ["medico", "enfermero"]}, "historia", "urgencias", "*", "leer", "allow")
     narrow = _policy("P2", "medico", "historia", "urgencias", "*", "leer", "allow")
@@ -113,19 +100,15 @@ def test_redundant_policy_is_stripped_when_dominated_by_same_effect():
 
 
 def test_conflicting_policies_are_detected_and_reordered_so_deny_wins():
-    # Se agregan politicas adicionales (no relacionadas) para que la
-    # ponderacion por entropia no degenere a pesos cero -- con solo 2
-    # politicas identicas en todo salvo el efecto, la diversidad de cada
-    # atributo es nula y ninguna arista de similitud se formaria.
     allow_p = _policy("P3", "auditor", "log", "zona_a", "mediodia", "leer", "allow")
     deny_p = _policy("P4", "auditor", "log", "zona_a", "mediodia", "leer", "deny")
     filler_1 = _policy("F1", "medico", "historia", "urgencias", "*", "leer", "allow")
     filler_2 = _policy("F2", "invitado", "portal", "red_externa", "*", "lectura", "allow")
     policies = [allow_p, deny_p, filler_1, filler_2]
     pbc = _build(policies)
-    # forzar que el "perdedor" (allow) quede primero en su comunidad
     for comm, pids in pbc.items():
         if {"P3", "P4"}.issubset(set(pids)):
+            # se fuerza el allow primero para ver que el audit lo reordena
             pbc[comm] = ["P3"] + [p for p in pids if p != "P3"]
 
     _, new_pbc, report = audit_and_mitigate(policies, pbc, conflict_priority="deny")
@@ -150,8 +133,6 @@ def test_unrelated_policy_is_left_untouched():
 
 
 def test_wildcard_redundancy_is_found_across_different_communities():
-    # subject comodin, sin relacion de similitud exacta con lo demas en otros
-    # atributos -> Louvain puede separarlas en comunidades distintas.
     wide = _policy("ADMIN", "*", "portal_externo", "red_externa", "tarde", "lectura", "allow")
     narrow = _policy("GUEST", "invitado", "portal_externo", "red_externa", "tarde", "lectura", "allow")
     other = _policy("OTHER", "anonimo", "puerto_22", "red_externa2", "noche", "escaneo_puertos", "deny")
@@ -165,10 +146,6 @@ def test_wildcard_redundancy_is_found_across_different_communities():
 
 
 def test_duplicate_tiebreak_prefers_the_policy_with_reconfigure_on():
-    # "A" es alfabeticamente menor que "B" -- el desempate viejo (puramente
-    # alfabetico) habria conservado "A" y eliminado "B", perdiendo su
-    # reconfigure_on silenciosamente. Con el criterio nuevo debe ganar "B"
-    # por tener reconfigure_on, sin importar el orden alfabetico.
     a_sin_reconf = _policy("A", "medico", "historia", "urgencias", "*", "leer", "allow")
     b_con_reconf = _policy(
         "B", "medico", "historia", "urgencias", "*", "leer", "allow",
@@ -189,8 +166,6 @@ def test_duplicate_tiebreak_prefers_the_policy_with_reconfigure_on():
 
 
 def test_no_duplicate_reports_for_the_same_pair():
-    # ambas politicas tienen comodin (time="*"), disparando el cruce entre
-    # comunidades desde los dos lados -- no debe reportarse el par dos veces.
     a = _policy("A", "medico", "historia", "urgencias", "*", "leer", "allow")
     b = _policy("B", "medico", "historia", "urgencias", "*", "leer", "allow")
     policies = [a, b] + _diversity_fillers()
@@ -218,7 +193,7 @@ def test_modularity_monitor_runs_audit_during_level4_rebuild():
     assert len(ce.policies["P2"].events) == 1
 
     monitor = ModularityMonitor(evaluator=ce, graph_builder=gb, community_detector=cd, threshold=0.5)
-    monitor._rebuild_worker()
+    monitor._rebuild_worker()  # reconstruccion de nivel 4 sin esperar al umbral
 
     assert monitor.last_audit_report is not None
     assert len(monitor.last_audit_report.redundant_events) == 1

@@ -1,18 +1,10 @@
-"""
-Genera las graficas comparativas de la metrica de estres aproximada
-(modularidad real vs. aproximacion barata) usadas en el documento LaTeX.
-
-Salida: cada grafica se escribe en .eps (para incluir en Overleaf) y en .png
-(para visualizarla rapido), dentro de experiments/figuras_estres_proxy/.
-
-Requiere deact_history.json (junto a este script) -- el historial completo
-de los 1,000 swaps de la corrida de recalibracion adaptativa.
-"""
+# uso:
+#   poetry run python graficas/make_charts.py
 
 import json
 import os
 import matplotlib
-matplotlib.use("Agg")
+matplotlib.use("Agg")  # sin ventana, solo archivos
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
@@ -21,15 +13,13 @@ OUT = os.path.join(HERE, "..", "experiments", "figuras_estres_proxy")
 os.makedirs(OUT, exist_ok=True)
 
 
+# cada figura en eps (para el documento) y png
 def save(fig, name, **kwargs):
     fig.savefig(os.path.join(OUT, f"{name}.eps"), **kwargs)
     fig.savefig(os.path.join(OUT, f"{name}.png"), dpi=200, **kwargs)
     plt.close(fig)
 
 
-# ---------------------------------------------------------------------------
-# Paleta validada (dataviz skill, references/palette.md) -- superficie clara
-# ---------------------------------------------------------------------------
 SURFACE   = "#fcfcfb"
 INK       = "#0b0b0b"
 INK_SOFT  = "#52514e"
@@ -37,10 +27,10 @@ MUTED     = "#898781"
 GRID      = "#e1e0d9"
 BASELINE  = "#c3c2b7"
 
-BLUE   = "#2a78d6"   # slot 1 -- modularidad real
-ORANGE = "#eb6834"   # slot 2 -- aproximacion barata (proxy)
-RED    = "#e34948"   # polo divergente (tarde / mas lento)
-GRAY   = "#c3c2b7"   # "nunca" / sin dato
+BLUE   = "#2a78d6"  # real
+ORANGE = "#eb6834"  # aproximacion barata
+RED    = "#e34948"
+GRAY   = "#c3c2b7"
 
 plt.rcParams.update({
     "figure.facecolor": SURFACE,
@@ -71,12 +61,9 @@ def clean_axes(ax, x_grid=False, y_grid=True):
     ax.tick_params(length=0)
 
 
-# ===========================================================================
-# Grafica 1 -- Velocidad: tiempo promedio por cambio (real vs proxy)
-# ===========================================================================
 def fig_velocidad():
     scenarios = ["Escenario mixto\n(821 cambios)", "Escenario de desactivacion\n(1,000 cambios)"]
-    real_ms   = [773.9797, 318.9651]
+    real_ms   = [773.9797, 318.9651]  # promedios medidos en las corridas
     proxy_ms  = [1.3508, 0.6367]
 
     fig, ax = plt.subplots(figsize=(6.6, 4.2))
@@ -86,7 +73,7 @@ def fig_velocidad():
     bars_real = ax.bar([i - w/2 for i in x], real_ms, width=w, color=BLUE, label="Modularidad real", zorder=3)
     bars_proxy = ax.bar([i + w/2 for i in x], proxy_ms, width=w, color=ORANGE, label="Aproximacion barata", zorder=3)
 
-    ax.set_yscale("log")
+    ax.set_yscale("log")  # la diferencia es de cientos de veces
     ax.set_ylim(0.3, 3000)
     ax.set_ylabel("Tiempo promedio por cambio (ms, escala log)")
     ax.set_xticks(list(x))
@@ -105,13 +92,6 @@ def fig_velocidad():
     save(fig, "fig_velocidad")
 
 
-# ===========================================================================
-# Grafica 2 -- El costo real cae; el proxy se mantiene plano (un solo plano,
-# eje Y logaritmico -- las dos series comparten el mismo eje y las mismas
-# unidades (ms); el log es lo que permite verlas juntas sin que el proxy
-# quede aplastado contra el cero. No es un eje doble: sigue siendo una sola
-# escala, solo que no lineal.
-# ===========================================================================
 def fig_costo_en_el_tiempo(hist):
     swaps = [h["swap"] for h in hist]
     t_real = [h["t_real_s"] * 1000 for h in hist]
@@ -128,16 +108,10 @@ def fig_costo_en_el_tiempo(hist):
     clean_axes(ax)
     ax.legend(frameon=False, loc="upper right")
 
-    #ax.set_title("El costo real cae segun el sistema se achica; el de la\naproximacion barata se mantiene plano todo el tiempo",
-                  #fontsize=11, color=INK, loc="left")
-
     fig.tight_layout()
     save(fig, "fig_costo_en_el_tiempo", bbox_inches="tight")
 
 
-# ===========================================================================
-# Grafica 3 -- Desplazamiento del disparo por ciclo: umbral fijo vs recalibrado
-# ===========================================================================
 def offset_panel(ax, cycles, offsets, title):
     labels = [f"Ciclo {c}" for c in cycles]
     ypos = range(len(cycles))
@@ -164,6 +138,7 @@ def offset_panel(ax, cycles, offsets, title):
 
 def fig_offset_ciclos():
     fixed_cycles = list(range(2, 9))
+    # None = el proxy nunca llego al umbral en ese ciclo
     fixed_offsets = [-32, -77, 3, -66, -18, None, -61]
 
     adapt_cycles = list(range(2, 9))
@@ -189,9 +164,6 @@ def fig_offset_ciclos():
     save(fig, "fig_offset_ciclos", bbox_inches="tight")
 
 
-# ===========================================================================
-# Grafica 4 -- Evolucion del umbral recalibrado a traves de los ciclos
-# ===========================================================================
 def fig_umbral_evolucion():
     cycles_th = [2, 3, 4, 5, 6, 7, 8, 9]
     threshold_vals = [0.1047, 0.1422, 0.2070, 0.0998, 0.2104, 0.1467, 0.0716, 0.2739]
@@ -210,9 +182,6 @@ def fig_umbral_evolucion():
     save(fig, "fig_umbral_evolucion", bbox_inches="tight")
 
 
-# ===========================================================================
-# Grafica 5 -- Dispersion: cuanto se movio la modularidad real vs la aproximacion
-# ===========================================================================
 def fig_dispersion(hist):
     dq = [h["delta_q"] for h in hist]
     dp = [h["delta_proxy"] for h in hist]
@@ -229,13 +198,6 @@ def fig_dispersion(hist):
     save(fig, "fig_dispersion")
 
 
-# ===========================================================================
-# Grafica 6 -- Trayectoria del estres acumulado: real vs. aproximacion,
-# con los umbrales y los puntos de reconstruccion (recalibracion) marcados.
-# Pedido del asesor: no se espera que las dos curvas sean iguales, sino ver
-# si un cambio en la real se refleja CERCA en el tiempo en la aproximada,
-# y donde se van ajustando los umbrales.
-# ===========================================================================
 def fig_trayectoria_estres(hist):
     import math
     from matplotlib.lines import Line2D
@@ -245,18 +207,16 @@ def fig_trayectoria_estres(hist):
     sp = [h["stress_proxy"] for h in hist]
     tp = [h["threshold_proxy"] if h["threshold_proxy"] is not None else math.nan for h in hist]
 
-    # Segmentar en ciclos (entre una reconstruccion y la siguiente) para
-    # encontrar el pico de cada serie en cada ciclo -- ahi es donde se
-    # imprime el valor numerico exacto.
     cycles = []
     start = 0
     for i in range(1, len(hist)):
+        # si el estres baja hubo reconstruccion
         if sq[i] < sq[i-1] or sp[i] < sp[i-1]:
             cycles.append((start, i - 1))
             start = i
     cycles.append((start, len(hist) - 1))
 
-    resets = [swaps[b] for a, b in cycles[:-1]]  # todo pico de ciclo, salvo el ultimo (incompleto)
+    resets = [swaps[b] for a, b in cycles[:-1]]
 
     fig, ax = plt.subplots(figsize=(10.5, 6.0))
 
@@ -268,8 +228,6 @@ def fig_trayectoria_estres(hist):
     ax.axhline(0.05, color="#a8c7ec", linewidth=1.1, linestyle="--", zorder=2, label="Umbral real (fijo, 0.05)")
     ax.plot(swaps, tp, color="#f4b298", linewidth=1.1, linestyle="--", zorder=2, label="Umbral proxy (recalibrado)")
 
-    # Valor numerico exacto en cada pico (justo antes de cada reconstruccion),
-    # para ambas series -- asi no hace falta adivinar la altura a ojo.
     for a, b in cycles:
         peak_swap = swaps[b]
         ax.annotate(f"{sq[b]:.3f}", (peak_swap, sq[b]), textcoords="offset points", xytext=(-2, 6),
@@ -292,14 +250,6 @@ def fig_trayectoria_estres(hist):
     save(fig, "fig_trayectoria_estres", bbox_inches="tight")
 
 
-# ===========================================================================
-# Grafica 7 -- Valor CRUDO de la modularidad real (nunca se reinicia, sube y
-# baja de verdad) a lo largo de los 1,000 cambios. Pedido explicito del
-# asesor: no se le inventa una curva a la aproximacion barata (no sabe
-# direccion) -- se marcan, sobre la propia trayectoria real, los cambios
-# donde la aproximacion SI hubiera disparado un aviso, para leerlos junto a
-# la tabla del chat.
-# ===========================================================================
 def fig_q_real_trayectoria(hist):
     swaps = [h["swap"] for h in hist]
     qr = [h["q_real"] for h in hist]
@@ -309,9 +259,7 @@ def fig_q_real_trayectoria(hist):
 
     resets = [swaps[i] for i in range(1, len(hist)) if sq[i] < sq[i-1] or sp[i] < sp[i-1]]
 
-    # Cambios donde la aproximacion barata cruzo su propio umbral recalibrado
-    # dentro de su ciclo (ver tabla) -- son los "avisos" del proxy.
-    proxy_trigger_swaps = [333, 490, 679, 899]
+    proxy_trigger_swaps = [333, 490, 679, 899]  # cambios donde disparo el proxy en esa corrida
 
     fig, ax = plt.subplots(figsize=(10.5, 5.4))
 
@@ -344,14 +292,6 @@ def fig_q_real_trayectoria(hist):
     save(fig, "fig_q_real_trayectoria", bbox_inches="tight")
 
 
-# ===========================================================================
-# Grafica 8 -- Sin reconstruccion de por medio: un solo tramo continuo de
-# 1,000 cambios. Arriba, la Q real cruda (nunca se reinicia, sube y baja de
-# verdad). Abajo, lo que acumula la aproximacion barata en ese MISMO tramo
-# (tambien continuo, sin reiniciar -- aqui si tiene su propia linea, porque
-# es lo unico que el proxy en verdad produce). Comparten el eje horizontal
-# para poder ver si los tramos de mayor movimiento coinciden.
-# ===========================================================================
 def fig_comparacion_sin_reconstruccion(hist):
     swaps = [h["swap"] for h in hist]
     qr = [h["q_real"] for h in hist]
@@ -378,6 +318,7 @@ def fig_comparacion_sin_reconstruccion(hist):
 
 if __name__ == "__main__":
     hist = json.load(open(os.path.join(HERE, "deact_history.json")))
+    # misma corrida pero sin reconstrucciones
     hist_norebuild = json.load(open(os.path.join(HERE, "deact_history_norebuild.json")))
 
     fig_velocidad()

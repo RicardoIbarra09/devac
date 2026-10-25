@@ -1,23 +1,12 @@
-"""
-Demostracion en vivo del compilador DPL (DEvAC Policy Language).
-
-Corre con:  python3 experiments/demo_dpl.py
-
-  1. Se escribe una politica en DPL (texto legible por una persona).
-  2. Se compila -- el compilador la convierte en objetos Policy/Event.
-  3. Esos objetos se usan: se corren por el pipeline completo
-     (GraphBuilder -> CommunityDetector -> CommunityPolicyEvaluator) y se
-     evaluan solicitudes de acceso reales contra ellos.
-  4. Un DPL con un error de sintaxis a proposito, para mostrar que el
-     compilador reporta errores con la linea exacta -- no es solo un
-     parser silencioso.
-"""
+# uso:
+#   poetry run python experiments/demo_dpl.py
 
 from devac import (
     AccessRequest, AttributeComponent, CommunityDetector,
     CommunityPolicyEvaluator, DPLLoader, DPLSyntaxError, GraphBuilder,
 )
 
+# una politica con dos eventos y un evento de reconfiguracion
 DPL_TEXT = """
 POLICY P-DOC-01 EFFECT ALLOW RECONFIGURE_ON (turno_terminado) {
     EVENT E1 WHERE (
@@ -37,6 +26,7 @@ POLICY P-DOC-01 EFFECT ALLOW RECONFIGURE_ON (turno_terminado) {
 }
 """
 
+# le falta el = en RESOURCE
 DPL_TEXT_CON_ERROR = """
 POLICY P-MAL EFFECT ALLOW {
     EVENT E1 WHERE (
@@ -51,14 +41,8 @@ POLICY P-MAL EFFECT ALLOW {
 
 
 def req(rol, recurso, ubicacion, accion, hora):
-    # OJO: las politicas compiladas desde DPL guardan `attribute` en ingles
-    # (vocabulario propio de DPL: subject/asset/space/time/action) -- hay
-    # que usar las mismas etiquetas aqui, porque EventMatcher.match_component
-    # exige que el texto de `attribute` coincida exacto antes de comparar
-    # valores (ver nota en la respuesta: es una inconsistencia real entre
-    # esto y el comentario del propio dpl.py, que dice que ese campo deberia
-    # ser una "etiqueta libre").
     return AccessRequest(
+        # el DPL genera las etiquetas en ingles, la peticion tiene que usar las mismas
         subject=AttributeComponent(attribute="subject", value=rol),
         asset=AttributeComponent(attribute="asset", value=recurso),
         space=AttributeComponent(attribute="space", value=ubicacion),
@@ -80,7 +64,7 @@ def main():
     with open(dpl_path, "w", encoding="utf-8") as f:
         f.write(DPL_TEXT)
 
-    policies = DPLLoader.from_file(dpl_path)
+    policies = DPLLoader.from_file(dpl_path)  # aqui se compila
     print(f"Compilado OK -- {len(policies)} politica(s) real(es):\n")
     for p in policies:
         print(f"  Policy(policy_id={p.policy_id!r}, effect={p.effect!r}, "
@@ -95,7 +79,7 @@ def main():
     print("3) USANDO ESAS POLITICAS DE VERDAD (pipeline real, no simulado)")
     print("=" * 70)
     gb = GraphBuilder()
-    graph = gb.build_event_graph(policies)
+    graph = gb.build_event_graph(policies)  # mismo pipeline que con las politicas en JSON
     cd = CommunityDetector()
     _, e2c = cd.detect_communities(graph)
     e2p = {e.event_id: p.policy_id for p in policies for e in p.events}
@@ -126,7 +110,7 @@ def main():
     print("DPL con un error a proposito (falta '=' antes de RESOURCE):\n")
     print(DPL_TEXT_CON_ERROR)
     try:
-        DPLLoader.from_file(dpl_path)  # placeholder, se sobreescribe abajo
+        DPLLoader.from_file(dpl_path)
     except Exception:
         pass
     with open(dpl_path, "w", encoding="utf-8") as f:

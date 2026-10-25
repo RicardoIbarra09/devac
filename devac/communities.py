@@ -5,13 +5,13 @@ from typing import Dict, List, Tuple
 
 
 class CommunityDetector:
-
     def __init__(self):
         self.event_communities = {}
         self.event_to_community = {}
         self.policies_by_community = defaultdict(set)
 
     def detect_communities(self, graph: nx.Graph) -> Tuple[Dict[str, int], Dict[str, int]]:
+        # louvain, ojo: no es determinista
         communities = community.louvain_communities(graph, weight="weight", resolution=1)
         self.event_communities = {}
         self.event_to_community = {}
@@ -21,6 +21,7 @@ class CommunityDetector:
                 self.event_to_community[node_id] = community_id
         return self.event_communities, self.event_to_community
 
+    # pasa de comunidad por evento a comunidad por politica
     def map_policies_to_communities(
         self,
         event_to_policy: Dict[str, str],

@@ -1,52 +1,17 @@
-"""
-devac/dpl.py — Compilador de DPL (DEvAC Policy Language)
-
-DPL es la sintaxis concreta, declarativa y humano-legible para autorar
-políticas, descrita formalmente en la Sección 3.2 del paper. Este módulo
-implementa el "DSL Compiler" que el paper menciona pero que no existía como
-código: toma texto DPL y lo compila al esquema JSON real que
-`devac.models.Policy.model_validate` ya consume (el mismo que usa
-`PolicyLoader`) — no un esquema simplificado de ejemplo.
-
-Gramática (EBNF), extendida respecto al paper para poder expresar
-reconfiguración — sin esto, DPL no podría autorar las políticas
-reconfigurables que son el objetivo del proyecto:
-
-    policy      ::= POLICY <id> EFFECT <effect> [reconfigure-clause] [on-deny-clause] "{" event+ "}"
-    reconfigure-clause ::= RECONFIGURE_ON "(" <literal> ("," <literal>)* ")"
-    on-deny-clause      ::= ON_DENY <ondeny>
-    event       ::= EVENT <id> WHERE "(" attr-list ")" ";"
-    attr-list   ::= attr ("," attr)*
-    attr        ::= <dim> <op> <spec>
-    dim         ::= SUBJECT | RESOURCE | LOCATION | TIME | ACTION
-    op          ::= "=" | IN | RANGE
-    spec        ::= <literal>                        // igualdad exacta
-                  | "*"                               // comodín
-                  | "(" <literal> ("," <literal>)+ ")" // pertenencia (IN), 2+ valores
-                  | "(" <literal> "," <literal> ")"    // intervalo (RANGE), exactamente 2
-    effect      ::= ALLOW | DENY
-    ondeny      ::= ALERT | ESCALATE
-
-Nota de mapeo: los nombres de dimensión del DPL (RESOURCE, LOCATION) usan el
-vocabulario en inglés del paper, pero los campos reales de `Event` en
-`models.py` son `asset` y `space` respectivamente — el compilador traduce
-entre ambos vocabularios explícitamente (`_DIM_TO_FIELD`).
-"""
-
 import re
 from typing import Any, Dict, List, Tuple
 
 from devac.models import Policy
 
 
+# error con numero de linea
 class DPLSyntaxError(Exception):
-    """Error de sintaxis DPL, con la línea donde ocurrió."""
-
     def __init__(self, message: str, line: int):
         super().__init__(f"Línea {line}: {message}")
         self.line = line
 
 
+# dimension del DPL -> campo de Event
 _DIM_TO_FIELD = {
     "SUBJECT": "subject",
     "RESOURCE": "asset",
@@ -57,6 +22,7 @@ _DIM_TO_FIELD = {
 _EFFECT_MAP = {"ALLOW": "allow", "DENY": "deny"}
 _ONDENY_MAP = {"ALERT": "alert", "ESCALATE": "escalate"}
 
+# tokens del lenguaje
 _TOKEN_RE = re.compile(r"""
     (?P<NEWLINE>\n)
   | (?P<WS>[ \t\r]+)
@@ -69,7 +35,7 @@ _TOKEN_RE = re.compile(r"""
 
 
 def _tokenize(text: str) -> List[Tuple[str, str, int]]:
-    text = re.sub(r"//[^\n]*", "", text)  # comentarios de línea
+    text = re.sub(r"//[^\n]*", "", text)  # quita comentarios //
     tokens: List[Tuple[str, str, int]] = []
     line = 1
     for m in _TOKEN_RE.finditer(text):
@@ -85,9 +51,8 @@ def _tokenize(text: str) -> List[Tuple[str, str, int]]:
     return tokens
 
 
+# parser recursivo descendente
 class _Parser:
-    """Parser recursivo-descendente de un documento DPL (uno o más POLICY)."""
-
     def __init__(self, tokens: List[Tuple[str, str, int]]):
         self._tokens = tokens
         self._pos = 0
@@ -119,6 +84,7 @@ class _Parser:
             policies.append(self._parse_policy())
         return policies
 
+    # POLICY id EFFECT ALLOW|DENY [RECONFIGURE_ON (...)] [ON_DENY ...] { eventos }
     def _parse_policy(self) -> Dict[str, Any]:
         self._expect_word("POLICY")
         pid = self._expect_kind("WORD")[1]
@@ -131,6 +97,7 @@ class _Parser:
         reconfigure_on: List[str] = []
         on_deny = None
 
+        # clausulas opcionales, en cualquier orden
         while self._peek()[0] == "WORD" and self._peek()[1] in ("RECONFIGURE_ON", "ON_DENY"):
             keyword = self._advance()[1]
             if keyword == "RECONFIGURE_ON":
@@ -140,7 +107,7 @@ class _Parser:
                     self._advance()
                     reconfigure_on.append(self._expect_kind("WORD")[1])
                 self._expect_kind("RPAREN")
-            else:  # ON_DENY
+            else:
                 ondeny_tok = self._expect_kind("WORD")[1]
                 if ondeny_tok not in _ONDENY_MAP:
                     raise DPLSyntaxError(f"on_deny inválido '{ondeny_tok}', se esperaba ALERT o ESCALATE", self._peek()[2])
@@ -167,6 +134,7 @@ class _Parser:
             policy["on_deny"] = on_deny
         return policy
 
+    # EVENT id WHERE (dim op valor, ...);
     def _parse_event(self) -> Dict[str, Any]:
         self._expect_word("EVENT")
         eid = self._expect_kind("WORD")[1]
@@ -182,6 +150,7 @@ class _Parser:
         self._expect_kind("RPAREN")
         self._expect_kind("SEMI")
 
+        # tienen que venir las 5 dimensiones
         missing = set(_DIM_TO_FIELD.values()) - set(components.keys())
         if missing:
             raise DPLSyntaxError(f"al evento '{eid}' le faltan dimensiones: {sorted(missing)}", self._peek()[2])
@@ -190,6 +159,7 @@ class _Parser:
         event.update(components)
         return event
 
+    # operadores: =, IN, RANGE
     def _parse_attr(self) -> Dict[str, Dict[str, Any]]:
         dim_tok = self._expect_kind("WORD")
         dim = dim_tok[1]
@@ -210,9 +180,6 @@ class _Parser:
         else:
             raise DPLSyntaxError(f"operador inválido '{op_tok[1]}', se esperaba =, IN o RANGE", op_tok[2])
 
-        # `attribute` usa el nombre de dimensión en minúsculas (vocabulario
-        # DPL en inglés) — es una etiqueta libre para EventMatcher, no la
-        # clave de indexación interna (esa la fija la posición, no este string).
         return {field: {"attribute": field, "value": value}}
 
     def _parse_exact_or_wildcard(self):
@@ -242,24 +209,17 @@ class _Parser:
         return {"range": [lo, hi]}
 
 
+# texto DPL -> lista de dicts con el formato de Policy
 def compile_dpl(text: str) -> List[Dict[str, Any]]:
-    """
-    Compila un documento DPL (una o más POLICY) al esquema JSON real que
-    consume `Policy.model_validate` — el mismo que produce/consume
-    `PolicyLoader`, no el esquema simplificado del paper.
-    """
     tokens = _tokenize(text)
     return _Parser(tokens).parse_document()
 
 
 def compile_dpl_to_policies(text: str) -> List[Policy]:
-    """Compila DPL y construye directamente los objetos Policy validados."""
     return [Policy.model_validate(p) for p in compile_dpl(text)]
 
 
 class DPLLoader:
-    """Contraparte de PolicyLoader para el formato DPL humano-legible."""
-
     @staticmethod
     def from_file(filepath: str) -> List[Policy]:
         with open(filepath, "r", encoding="utf-8") as f:

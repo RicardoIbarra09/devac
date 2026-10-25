@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
-"""
-E1: concordancia del evaluador por comunidades con el evaluador lineal y con un oraculo.
+# uso:
+#   python run_e1.py --workload W1 --policies experiments/nimbuslab_policies.json --seeds 1 2 3 4 5 --n-requests 10000 --out-dir resultados/e1
 
-Para una carga de trabajo (conjunto de politicas) y una semilla:
-  1. Genera solicitudes (mitad con coincidencia, mitad sin ella).
-  2. Calcula la decision de referencia con un oraculo independiente
-     (deny gana sobre allow; sin cobertura es deny).
-  3. Evalua con DEvAC y con el evaluador lineal, con la auditoria apagada y encendida.
-  4. Guarda metricas en CSV y metadatos de la corrida en JSON.
-
-Convencion: la clase positiva es "allow". Un FP es conceder acceso cuando el oraculo
-dice deny (el error grave en seguridad).
-
-Uso:
-  python run_e1.py --workload W1 --policies experiments/nimbuslab_policies.json \
-      --seeds 1 2 3 4 5 --n-requests 10000 --out-dir resultados/e1
-"""
 import argparse
 import copy
 import csv
@@ -42,11 +28,9 @@ from devac import (
     audit_and_mitigate,
 )
 
-# El constructor del grafo exporta un GEXF a disco en cada construccion. Aqui no se necesita
-# y el protocolo pide no mezclar escritura a disco con las mediciones.
+# sin gexf: es I/O que no queremos en las mediciones
 GraphBuilder.export_graph = lambda self, *args, **kwargs: None
 
-# (campo del evento, nombre del atributo en solicitudes e indices)
 FIELDS = [
     ("subject", "rol"),
     ("asset", "recurso"),
@@ -54,12 +38,9 @@ FIELDS = [
     ("time", "rango_horario"),
     ("action", "accion"),
 ]
-UNSEEN = "valor_desconocido"
+UNSEEN = "valor_desconocido"  # valor que no aparece en ninguna politica
 
 
-# ----------------------------------------------------------------------------
-# Oraculo independiente (no usa EventMatcher)
-# ----------------------------------------------------------------------------
 def _hm(text):
     h, m = text.strip().split(":")
     return int(h) * 60 + int(m)
@@ -69,13 +50,11 @@ def _fmt(minutes):
     return f"{minutes // 60:02d}:{minutes % 60:02d}"
 
 
-# Si es True el oraculo interpreta 23:00-06:00 como cruce de medianoche (semantica
-# prevista). Por defecto True: semantica prevista; --demo-semantics lo desactiva.
-WRAP_AWARE = True
+WRAP_AWARE = True  # el oraculo acepta rangos que cruzan medianoche
 
 
+# el oraculo no usa nada de devac para decidir, solo esto
 def _compile_component(value):
-    """Devuelve (tipo, dato) para comparar rapido."""
     if isinstance(value, dict):
         if "in" in value:
             return ("in", {str(v).strip().lower() for v in value["in"]})
@@ -102,8 +81,7 @@ def _covers(comp, req_value):
             return False
         if data[0] <= data[1]:
             return data[0] <= point <= data[1]
-        # Rango que cruza medianoche (p. ej. 23:00-06:00)
-        return WRAP_AWARE and (point >= data[0] or point <= data[1])
+        return WRAP_AWARE and (point >= data[0] or point <= data[1])  # cruza medianoche
     return False
 
 
@@ -116,8 +94,8 @@ def compile_policies(policies):
     return out
 
 
+# deny gana; si nada cubre la peticion tambien es deny
 def oracle_decision(compiled, req_values):
-    """Devuelve (decision, cubierta). Deny gana; sin cobertura es deny."""
     has_allow = False
     covered = False
     for effect, comps in compiled:
@@ -129,9 +107,7 @@ def oracle_decision(compiled, req_values):
     return ("allow" if has_allow else "deny"), covered
 
 
-# ----------------------------------------------------------------------------
-# Generador de solicitudes
-# ----------------------------------------------------------------------------
+# valores que si aparecen en las politicas, por atributo
 def build_vocab(policies):
     vocab = {attr: set() for _, attr in FIELDS}
     for p in policies:
@@ -146,6 +122,7 @@ def build_vocab(policies):
     return {attr: sorted(vals) for attr, vals in vocab.items()}
 
 
+# peticion armada a partir de un evento, para que si haga match
 def _matching_request(rng, events, vocab):
     for _ in range(100):
         e = rng.choice(events)
@@ -155,11 +132,11 @@ def _matching_request(rng, events, vocab):
             v = getattr(e, fld).value
             if isinstance(v, dict) and "range" in v:
                 lo, hi = _hm(v["range"][0]), _hm(v["range"][1])
-                if lo > hi:  # rango que cruza medianoche (p. ej. 23:00-06:00)
+                if lo > hi:
                     if not WRAP_AWARE:
                         ok = False
                         break
-                    span = (1440 - lo) + hi + 1
+                    span = (1440 - lo) + hi + 1  # minutos dentro del rango que cruza medianoche
                     values.append(_fmt((lo + rng.randrange(span)) % 1440))
                 else:
                     values.append(_fmt(rng.randint(lo, hi)))
@@ -177,6 +154,7 @@ def _matching_request(rng, events, vocab):
     return None
 
 
+# peticion al azar, la mayoria no va a coincidir con nada
 def _random_request(rng, vocab):
     values = []
     for _, attr in FIELDS:
@@ -194,14 +172,13 @@ def _random_request(rng, vocab):
 
 
 def generate_requests(policies, compiled, n, seed):
-    """Mitad con coincidencia y mitad sin ella; devuelve (solicitudes, intentos_fallidos)."""
     rng = random.Random(seed)
     vocab = build_vocab(policies)
     events = [e for p in policies for e in p.events]
     out = []
     failed = 0
     for i in range(n):
-        want_match = i % 2 == 0
+        want_match = i % 2 == 0  # mitad con match, mitad sin
         req = None
         if want_match:
             req = _matching_request(rng, events, vocab)
@@ -211,6 +188,7 @@ def generate_requests(policies, compiled, n, seed):
             for _ in range(500):
                 cand = _random_request(rng, vocab)
                 _, covered = oracle_decision(compiled, cand)
+                # se busca una que de verdad no cubra ninguna politica
                 if not covered:
                     req = cand
                     break
@@ -228,9 +206,7 @@ def to_access_request(values):
     return AccessRequest(**comps)
 
 
-# ----------------------------------------------------------------------------
-# Estructura de DEvAC
-# ----------------------------------------------------------------------------
+# grafo + louvain
 def build_structure(policies):
     graph = GraphBuilder().build_event_graph(policies)
     detector = CommunityDetector()
@@ -261,11 +237,8 @@ def agreement(a, b):
     return 100.0 * sum(x == y for x, y in zip(a, b)) / len(a)
 
 
-# ----------------------------------------------------------------------------
-# Una corrida: (carga, semilla, modo de auditoria)
-# ----------------------------------------------------------------------------
 def run_one(workload, policies_path, seed, n_requests, audit_on):
-    random.seed(seed)  # Louvain del demo no recibe semilla: se fija la del proceso
+    random.seed(seed)
     base = PolicyLoader.from_file(policies_path)
     pols = copy.deepcopy(base)
 
@@ -284,7 +257,7 @@ def run_one(workload, policies_path, seed, n_requests, audit_on):
     devac.run(pols, pbc)
     linear = TraditionalPolicyEvaluator(copy.deepcopy(pols))
 
-    ref_compiled = compile_policies(base)  # el oraculo siempre usa las politicas originales
+    ref_compiled = compile_policies(base)  # el oraculo usa las politicas originales, sin auditar
     requests, failed = generate_requests(base, ref_compiled, n_requests, seed)
     truth, covered = [], 0
     for r in requests:
@@ -303,8 +276,10 @@ def run_one(workload, policies_path, seed, n_requests, audit_on):
     preserved = float("nan")
     if audit_on:
         clean_compiled = compile_policies(pols)
+        # la auditoria no debe cambiar ninguna decision
         preserved = agreement(truth, [oracle_decision(clean_compiled, r)[0] for r in requests])
 
+    # cuantos rangos cruzan medianoche en la carga
     wrapped = sum(
         1
         for p in base
@@ -365,7 +340,7 @@ def versions():
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description="E1: correctitud de DEvAC y del evaluador lineal contra el oraculo")
     ap.add_argument("--workload", required=True, help="Nombre de la carga: W1, W2, W3...")
     ap.add_argument("--policies", required=True, help="JSON de politicas de la carga")
     ap.add_argument("--seeds", type=int, nargs="+", default=[1, 2, 3, 4, 5])
@@ -385,6 +360,7 @@ def main():
 
     rows = []
     for seed in args.seeds:
+        # cada semilla se corre sin y con auditoria
         for audit_on in (False, True):
             row = run_one(args.workload, args.policies, seed, args.n_requests, audit_on)
             rows.append(row)
@@ -402,6 +378,7 @@ def main():
         w.writerows(rows)
 
     on = [r for r in rows if r["audit"] == "on"]
+    # criterios de aceptacion de E1
     criterio = {
         "concordancia_100_con_auditoria": all(r["agree_devac_linear_pct"] == 100.0 for r in on),
         "decisiones_preservadas_100": all(r["decisions_preserved_pct"] == 100.0 for r in on),
