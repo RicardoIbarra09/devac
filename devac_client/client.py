@@ -32,7 +32,7 @@ class DevacClient:
     async def aclose(self) -> None:
         await self._http.aclose()
 
-    async def _request(self, method: str, url: str, **kwargs) -> httpx.Response:
+    async def request(self, method: str, url: str, **kwargs) -> httpx.Response:
         response = await self._http.request(method, url, **kwargs)
         # errores http como excepcion
         if response.status_code >= 400:
@@ -48,44 +48,44 @@ class DevacClient:
         return decision
 
     async def evaluate_timed(self, request: Dict[str, str], engine: str = "devac") -> Tuple[dict, Optional[float]]:
-        response = await self._request("POST", "/v1/evaluate", params={"engine": engine}, json=request)
+        response = await self.request("POST", "/v1/evaluate", params={"engine": engine}, json=request)
         server_us = response.headers.get("x-process-time-us")  # lo pone el middleware del servidor
         return response.json(), float(server_us) if server_us else None
 
     async def evaluate_batch(self, requests: List[Dict[str, str]], engine: str = "devac") -> dict:
-        response = await self._request("POST", "/v1/evaluate/batch", params={"engine": engine}, json={"requests": requests})
+        response = await self.request("POST", "/v1/evaluate/batch", params={"engine": engine}, json={"requests": requests})
         return response.json()
 
     async def list_policies(self, offset: int = 0, limit: int = 100) -> dict:
-        return (await self._request("GET", "/v1/policies", params={"offset": offset, "limit": limit})).json()
+        return (await self.request("GET", "/v1/policies", params={"offset": offset, "limit": limit})).json()
 
     async def get_policy(self, policy_id: str) -> dict:
-        return (await self._request("GET", f"/v1/policies/{policy_id}")).json()
+        return (await self.request("GET", f"/v1/policies/{policy_id}")).json()
 
     async def add_policy(self, policy: dict) -> dict:
-        return (await self._request("POST", "/v1/policies", json=policy)).json()
+        return (await self.request("POST", "/v1/policies", json=policy)).json()
 
     async def add_policies(self, policies: List[dict]) -> dict:
-        return (await self._request("POST", "/v1/policies/batch", json=policies)).json()
+        return (await self.request("POST", "/v1/policies/batch", json=policies)).json()
 
     async def add_dpl(self, source: str) -> dict:
-        return (await self._request("POST", "/v1/policies/dpl", json={"source": source})).json()
+        return (await self.request("POST", "/v1/policies/dpl", json={"source": source})).json()
 
     async def update_policy(self, policy: dict) -> dict:
-        return (await self._request("PUT", f"/v1/policies/{policy['policy_id']}", json=policy)).json()
+        return (await self.request("PUT", f"/v1/policies/{policy['policy_id']}", json=policy)).json()
 
     async def delete_policy(self, policy_id: str) -> None:
-        await self._request("DELETE", f"/v1/policies/{policy_id}")
+        await self.request("DELETE", f"/v1/policies/{policy_id}")
 
     async def publish_event(self, event_type: str, *, wait: bool = True, payload: Optional[dict] = None, **fields) -> dict:
         body = {"event_type": event_type, "payload": payload or {}, **fields}
-        return (await self._request("POST", "/v1/events", params={"wait": str(wait).lower()}, json=body)).json()
+        return (await self.request("POST", "/v1/events", params={"wait": str(wait).lower()}, json=body)).json()
 
     async def health(self) -> dict:
-        return (await self._request("GET", "/health")).json()
+        return (await self.request("GET", "/health")).json()
 
     async def stats(self) -> dict:
-        return (await self._request("GET", "/v1/stats")).json()
+        return (await self.request("GET", "/v1/stats")).json()
 
     async def rebuild(self) -> dict:
-        return (await self._request("POST", "/v1/admin/rebuild")).json()
+        return (await self.request("POST", "/v1/admin/rebuild")).json()

@@ -11,7 +11,7 @@ router = APIRouter(prefix="/v1", tags=["evaluación"])
 EngineQuery = Query(Engine.devac, alias="engine", description="devac (ruteo por comunidades) o baseline (escaneo lineal)")
 
 
-def _decision(raw: dict, engine: Engine) -> DecisionOut:
+def _decision(raw: dict, engine: Engine, version: int, consistent: bool) -> DecisionOut:
     return DecisionOut(
         decision=raw["result"],
         policy_id=raw["policy_id"],
@@ -19,7 +19,14 @@ def _decision(raw: dict, engine: Engine) -> DecisionOut:
         steps=raw["steps"],
         eval_time_us=raw["eval_time"] * 1e6,  # segundos -> microsegundos
         engine=engine,
+        policy_version=version,
+        consistent=consistent,
     )
+
+
+# se lee antes de evaluar; evaluate es sincrono, nada se mete en medio
+def _snapshot(engine: DevacEngine) -> tuple:
+    return engine.policy_version, not engine.write_in_progress
 
 
 # async a proposito: evaluate es cpu corto, un threadpool solo agrega overhead
@@ -29,7 +36,8 @@ async def evaluate(
     engine_name: Engine = EngineQuery,
     engine: DevacEngine = Depends(get_engine),
 ) -> DecisionOut:
-    return _decision(engine.evaluate(request_from_dto(body), engine_name), engine_name)
+    version, consistent = _snapshot(engine)
+    return _decision(engine.evaluate(request_from_dto(body), engine_name), engine_name, version, consistent)
 
 
 @router.post("/evaluate/batch", response_model=BatchOut)
@@ -41,7 +49,11 @@ async def evaluate_batch(
     limit = engine.settings.max_batch_size
     if len(body.requests) > limit:
         raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, f"máximo {limit} solicitudes por lote")
-    results = [_decision(engine.evaluate(request_from_dto(r), engine_name), engine_name) for r in body.requests]
+    version, consistent = _snapshot(engine)
+    results = [
+        _decision(engine.evaluate(request_from_dto(r), engine_name), engine_name, version, consistent)
+        for r in body.requests
+    ]
     return BatchOut(
         engine=engine_name,
         results=results,

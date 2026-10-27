@@ -7,10 +7,12 @@ packages = [
     { include = "devac" },
     { include = "devac_api" },
     { include = "devac_client" },
+    { include = "devac_sim" },
 ]
 
 [tool.poetry.scripts]
 devac-loadgen = "devac_client.loadgen:main"
+devac-sim = "devac_sim.cli:main"
 
 [tool.poetry.dependencies]
 python     = ">=3.10,<4"

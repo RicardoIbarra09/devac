@@ -28,6 +28,8 @@ class DecisionOut(BaseModel):
     steps: int
     eval_time_us: float  # solo el tiempo de evaluate()
     engine: Engine
+    policy_version: int  # version de politicas con la que se evaluo
+    consistent: bool  # false si se evaluo con una escritura a medias
 
 
 class BatchIn(BaseModel):
@@ -148,6 +150,7 @@ class StatsOut(BaseModel):
     communities: int
     events: int
     reconfigurations_applied: int
+    policy_version: int
     monitor: Dict[str, Any]
     last_audit: Optional[str]
 

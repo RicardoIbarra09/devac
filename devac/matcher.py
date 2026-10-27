@@ -1,22 +1,39 @@
-from typing import Union, Dict, Any, List
+from functools import lru_cache
+from typing import Union, Dict, Any, List, Optional, Tuple
 from devac.models import Event, AttributeComponent, AccessRequest
-from datetime import datetime
+
+
+# HH:MM -> minutos del dia; None si no es una hora valida
+@lru_cache(maxsize=4096)
+def _minutes(text: str) -> Optional[int]:
+    hh, sep, mm = text.strip().partition(":")
+    if not sep or not (hh + mm).isascii() or not (hh.isdigit() and mm.isdigit()) or len(hh) > 2 or len(mm) > 2:
+        return None
+    h, m = int(hh), int(mm)
+    if h > 23 or m > 59:
+        return None
+    return h * 60 + m
+
+
+@lru_cache(maxsize=1024)
+def _range_minutes(policy_range: str) -> Optional[Tuple[int, int]]:
+    start, sep, end = policy_range.partition("-")
+    if not sep:
+        return None
+    start_min, end_min = _minutes(start), _minutes(end)
+    if start_min is None or end_min is None:
+        return None
+    return start_min, end_min
 
 
 class EventMatcher:
     @staticmethod
     def is_time_in_range(policy_range: str, request_time: str) -> bool:
-        try:
-            start_str, end_str = policy_range.split("-")
-            start_time = datetime.strptime(start_str.strip(), "%H:%M").time()
-            end_time   = datetime.strptime(end_str.strip(),   "%H:%M").time()
-            req_time   = datetime.strptime(request_time.strip(), "%H:%M").time()
-        except ValueError:
+        bounds = _range_minutes(policy_range)
+        point = _minutes(request_time)
+        if bounds is None or point is None:
             return False
-
-        start = start_time.hour * 60 + start_time.minute  # todo a minutos del dia
-        end   = end_time.hour * 60 + end_time.minute
-        point = req_time.hour * 60 + req_time.minute
+        start, end = bounds
 
         # rango normal
         if start <= end:

@@ -3,6 +3,7 @@
 #   poetry run devac-loadgen --requests experiments/nimbuslab_requests.json --total 8000 --processes 4 --concurrency 4
 #   poetry run devac-loadgen --requests experiments/nimbuslab_requests.json --rate 300 --total 3000
 #   poetry run devac-loadgen --requests traza.jsonl --speed 10 --csv resultados.csv
+#   poetry run devac-loadgen --requests trazas/w1_r01.jsonl --speed 1 --processes 4 --csv replay.csv   (traza mixta de devac-sim)
 
 import argparse
 import asyncio
@@ -22,8 +23,8 @@ from devac_client.client import DevacAPIError, DevacClient
 
 DIMENSIONS = ("subject", "asset", "space", "time", "action")
 
-# (segundo en que debe salir o None, peticion)
-ScheduledRequest = Tuple[Optional[float], Dict[str, str]]
+# (segundo en que debe salir o None, peticion plana o registro de control con "kind")
+ScheduledRequest = Tuple[Optional[float], dict]
 
 
 @dataclass
@@ -37,6 +38,13 @@ class Sample:
     decision: Optional[str]
     status: int
     error: Optional[str] = None
+    kind: str = "access"
+    policy_version: Optional[int] = None
+    consistent: Optional[bool] = None
+
+
+def is_control(payload: dict) -> bool:
+    return "kind" in payload
 
 
 # acepta formato del nucleo o plano
@@ -54,9 +62,14 @@ def load_workload(path: str) -> List[ScheduledRequest]:
     if p.suffix == ".jsonl":
         items = []
         for line in p.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                record = json.loads(line)
-                items.append((record.get("t"), _flatten(record)))  # t = segundo de la traza
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            kind = record.get("kind", "access")
+            if kind == "meta":
+                continue
+            # t = segundo de la traza
+            items.append((record.get("t"), _flatten(record) if kind == "access" else record))
         return items
     return [(None, _flatten(r)) for r in json.loads(p.read_text(encoding="utf-8"))]
 
@@ -66,6 +79,12 @@ def build_schedule(items: List[ScheduledRequest], total: int, rate: float, speed
     if not items:
         raise ValueError("la carga de trabajo está vacía")
     n = len(items)
+    if any(is_control(payload) for _, payload in items):
+        # los cambios de politicas solo tienen sentido en su orden y a su hora
+        if rate > 0 or speed <= 0:
+            raise ValueError("una traza con registros de control solo se reproduce con --speed")
+        if total > n:
+            raise ValueError("una traza con registros de control no se puede repetir (--total mayor que la traza)")
     if rate > 0:
         return [(i / rate, items[i % n][1]) for i in range(total)]  # lazo abierto a tasa fija
 
@@ -105,6 +124,44 @@ async def _send(client: DevacClient, index: int, scheduled: ScheduledRequest, en
         decision=decision["decision"] if decision else None,
         status=status,
         error=error,
+        policy_version=decision.get("policy_version") if decision else None,
+        consistent=decision.get("consistent") if decision else None,
+    )
+
+
+# registro de control de la traza -> llamada a la API de gestion
+async def apply_control(client: DevacClient, record: dict) -> httpx.Response:
+    kind = record["kind"]
+    if kind == "policy_add":
+        return await client.request("POST", "/v1/policies", json=record["policy"])
+    if kind == "policy_update":
+        policy = record["policy"]
+        return await client.request("PUT", f"/v1/policies/{policy['policy_id']}", json=policy)
+    if kind == "policy_delete":
+        return await client.request("DELETE", f"/v1/policies/{record['policy_id']}")
+    if kind == "domain_event":
+        return await client.request("POST", "/v1/events", params={"wait": "true"}, json=record["event"])
+    raise ValueError(f"registro de control desconocido: {kind}")
+
+
+async def _send_control(client: DevacClient, index: int, scheduled: ScheduledRequest,
+                        t0: float, samples: List[Optional[Sample]]) -> None:
+    offset, record = scheduled
+    started = t0 + offset
+    status, version, error = 0, None, None
+    try:
+        response = await apply_control(client, record)
+        status = response.status_code
+        header = response.headers.get("x-policy-version")
+        version = int(header) if header else None
+    except DevacAPIError as exc:
+        status, error = exc.status_code, str(exc.detail)
+    except httpx.HTTPError as exc:
+        error = f"{type(exc).__name__}: {exc}"
+    samples[index] = Sample(
+        index=index, intended_offset_s=offset, latency_us=(time.perf_counter() - started) * 1e6,
+        server_us=None, eval_time_us=None, steps=None, decision=None, status=status, error=error,
+        kind=record["kind"], policy_version=version,
     )
 
 
@@ -128,15 +185,26 @@ async def _closed_loop(client, schedule, engine, concurrency, samples) -> None:
 # salen a su hora aunque el servidor vaya atrasado
 async def _open_loop(client, schedule, engine, concurrency, samples, t0) -> None:
     in_flight = asyncio.Semaphore(concurrency)
-    tasks = []
+    controls: asyncio.Queue = asyncio.Queue()
+
+    # un solo escritor: los cambios salen en el orden de la traza
+    async def control_worker() -> None:
+        while (item := await controls.get()) is not None:
+            await _send_control(client, *item, t0, samples)
+
+    tasks = [asyncio.create_task(control_worker())]
     for index, scheduled in enumerate(schedule):
         delay = t0 + scheduled[0] - time.perf_counter()
         if delay > 0:
             await asyncio.sleep(delay)
+        if is_control(scheduled[1]):
+            controls.put_nowait((index, scheduled))
+            continue
         await in_flight.acquire()  # tope de peticiones en vuelo
         task = asyncio.create_task(_send(client, index, scheduled, engine, t0, samples))
         task.add_done_callback(lambda _t: in_flight.release())
         tasks.append(task)
+    controls.put_nowait(None)
     await asyncio.gather(*tasks)
 
 
@@ -149,7 +217,8 @@ async def run_load(url: str, schedule: List[ScheduledRequest], *, engine: str = 
         # calentamiento, no se cuenta
         if warmup:
             discard: List[Optional[Sample]] = [None] * warmup
-            warm = [(None, schedule[i % len(schedule)][1]) for i in range(warmup)]
+            access = [payload for _, payload in schedule if not is_control(payload)]
+            warm = [(None, access[i % len(access)]) for i in range(warmup)]
             await _closed_loop(client, warm, engine, concurrency, discard)
 
         samples: List[Optional[Sample]] = [None] * len(schedule)
@@ -167,19 +236,33 @@ def _run_shard(url: str, shard: List[ScheduledRequest], engine: str, concurrency
     return asyncio.run(run_load(url, shard, engine=engine, concurrency=concurrency, warmup=warmup, timeout=timeout))
 
 
+# acceso i -> proceso i % P; todo el control va al proceso 0 para no perder el orden
+def split_shards(schedule: List[ScheduledRequest], processes: int) -> List[List[int]]:
+    positions: List[List[int]] = [[] for _ in range(processes)]
+    access_seen = 0
+    for i, (_, payload) in enumerate(schedule):
+        if is_control(payload):
+            positions[0].append(i)
+        else:
+            positions[access_seen % processes].append(i)
+            access_seen += 1
+    return [p for p in positions if p]
+
+
 def run_load_multiprocess(url: str, schedule: List[ScheduledRequest], *, processes: int, engine: str = "devac",
                           concurrency: int = 16, warmup: int = 0, timeout: float = 10.0) -> Tuple[List[Sample], float]:
     from concurrent.futures import ProcessPoolExecutor
 
-    shards = [schedule[i::processes] for i in range(processes)]  # peticion i -> proceso i % P
-    with ProcessPoolExecutor(max_workers=processes) as pool:
-        futures = [pool.submit(_run_shard, url, s, engine, concurrency, warmup, timeout) for s in shards if s]
+    positions = split_shards(schedule, processes)
+    with ProcessPoolExecutor(max_workers=len(positions)) as pool:
+        futures = [pool.submit(_run_shard, url, [schedule[i] for i in p], engine, concurrency, warmup, timeout)
+                   for p in positions]
         results = [f.result() for f in futures]
 
     samples: List[Sample] = []
-    for shard_index, (shard_samples, _) in enumerate(results):
+    for shard_positions, (shard_samples, _) in zip(positions, results):
         for s in shard_samples:
-            s.index = s.index * processes + shard_index  # regresa al indice global
+            s.index = shard_positions[s.index]  # regresa al indice global
             samples.append(s)
     samples.sort(key=lambda s: s.index)
     return samples, max(duration for _, duration in results)
@@ -200,12 +283,17 @@ def _pcts(values: List[float]) -> dict:
 
 # percentiles de latencia, pasos y decisiones
 def summarize(samples: List[Sample], duration_s: float) -> dict:
+    controls = [s for s in samples if s.kind != "access"]
+    samples = [s for s in samples if s.kind == "access"]
     ok = [s for s in samples if s.status == 200]
     return {
         "requests": len(samples),
         "ok": len(ok),
         "errors": len(samples) - len(ok),
         "error_kinds": dict(Counter(s.error.split(":")[0] for s in samples if s.error)),
+        "controls": len(controls),
+        "control_errors": sum(1 for s in controls if s.error or s.status >= 400),
+        "inconsistent": sum(1 for s in ok if s.consistent is False),
         "duration_s": duration_s,
         "throughput_rps": len(ok) / duration_s if duration_s > 0 else 0.0,
         "client_latency_us": _pcts([s.latency_us for s in ok]),
@@ -233,6 +321,9 @@ def _format(summary: dict, engine: str) -> str:
         row("pasos", summary["steps"]),
         f"  decisiones: {summary['decisions']}",
     ]
+    if summary["controls"]:
+        lines.append(f"  control: {summary['controls']} registros, {summary['control_errors']} con error; "
+                     f"{summary['inconsistent']} evaluaciones durante una escritura")
     if summary["error_kinds"]:
         lines.append(f"  errores: {summary['error_kinds']}")
     return "\n".join(lines)
@@ -281,7 +372,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             writer.writerows(asdict(s) for s in samples)
     if args.json_out:
         Path(args.json_out).write_text(json.dumps({"engine": args.engine, **summary}, indent=2), encoding="utf-8")
-    return 0 if summary["errors"] == 0 else 1
+    return 0 if summary["errors"] == 0 and summary["control_errors"] == 0 else 1
 
 
 if __name__ == "__main__":

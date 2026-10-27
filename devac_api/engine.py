@@ -1,6 +1,7 @@
 import asyncio
 import importlib
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
@@ -78,6 +79,8 @@ class DevacEngine:
         self._baseline_key: Optional[tuple] = None
 
         self.write_lock = asyncio.Lock()  # un solo escritor; las lecturas no usan lock
+        self.policy_version = 0  # escrituras de control confirmadas
+        self._writing = False
         self._background: set = set()  # eventos encolados con wait=false
 
         initial = [canonicalize_policy(p) for p in policies]
@@ -112,6 +115,21 @@ class DevacEngine:
             self._baseline_key = key
         return self._baseline
 
+    # true mientras una escritura va a medias (p. ej. esperando la cascada del bus)
+    @property
+    def write_in_progress(self) -> bool:
+        return self._writing
+
+    @asynccontextmanager
+    async def _control_write(self):
+        async with self.write_lock:
+            self._writing = True
+            try:
+                yield
+                self.policy_version += 1  # solo si la escritura no fallo
+            finally:
+                self._writing = False
+
     def _on_policy_change(self, _policy: Optional[Policy]) -> None:
         self._mutations += 1
 
@@ -137,13 +155,14 @@ class DevacEngine:
             "communities": len(self.evaluator.policies_by_community),
             "events": sum(len(evs) for evs in self.evaluator.events_by_comm.values()),
             "reconfigurations_applied": len(self.reconfigurator.log),
+            "policy_version": self.policy_version,
             "monitor": self.monitor.get_stats(),
             "last_audit": report.summary() if report is not None else None,
         }
 
     async def add_policies(self, policies: List[Policy]) -> List[Policy]:
         policies = [canonicalize_policy(p) for p in policies]
-        async with self.write_lock:
+        async with self._control_write():
             self._ensure_unique(policies, existing=self.evaluator.policies)
             for policy in policies:
                 self._insert(policy)
@@ -154,7 +173,7 @@ class DevacEngine:
 
     async def update_policy(self, policy: Policy) -> Policy:
         policy = canonicalize_policy(policy)
-        async with self.write_lock:
+        async with self._control_write():
             if policy.policy_id not in self.evaluator.policies:
                 raise PolicyNotFound(policy.policy_id)
             others = {pid: p for pid, p in self.evaluator.policies.items() if pid != policy.policy_id}
@@ -171,7 +190,7 @@ class DevacEngine:
         return self.evaluator.policies[policy.policy_id]
 
     async def delete_policy(self, policy_id: str) -> None:
-        async with self.write_lock:
+        async with self._control_write():
             if policy_id not in self.evaluator.policies:
                 raise PolicyNotFound(policy_id)
             self.evaluator.remove_policy(policy_id)
@@ -209,7 +228,7 @@ class DevacEngine:
         return await self._process_event(event)
 
     async def _process_event(self, event: DomainEvent) -> List[dict]:
-        async with self.write_lock:
+        async with self._control_write():
             start = len(self.reconfigurator.log)  # para devolver solo lo que hizo este evento
             await self.bus.publish(event)
             return self.reconfigurator.log[start:]

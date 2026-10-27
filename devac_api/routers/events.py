@@ -29,6 +29,7 @@ async def publish_event(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, exc.errors(include_url=False, include_context=False))
 
     applied = await engine.publish_event(event, wait=wait)
+    response.headers["X-Policy-Version"] = str(engine.policy_version)  # con wait=false aun no cambia
     # wait=false
     if applied is None:
         response.status_code = status.HTTP_202_ACCEPTED
