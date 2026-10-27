@@ -42,7 +42,6 @@ class ModularityMonitor:
         self.verify_modularity    = verify_modularity  # tambien calcula Q completa con networkx, para comparar
 
         self._stress: float          = 0.0  # suma de |dQ| desde la ultima reconstruccion
-        self._stress_proxy: float    = 0.0  # version barata, sin recalcular Q
         self._q_current: float       = 0.0
         self._swap_count: int        = 0
         self._rebuilds: int          = 0
@@ -54,10 +53,7 @@ class ModularityMonitor:
         self.lock                    = threading.RLock()
         self._q = IncrementalModularity()
 
-        # se ajusta cada vez que dispara el umbral real
-        self._threshold_proxy: Optional[float] = None
-
-        self.history: List[Dict] = []  # un registro por swap para comparar real vs proxy
+        self.history: List[Dict] = []  # un registro por cambio
 
         if graph_builder.graph is not None:
             self._reset_modularity()
@@ -77,12 +73,6 @@ class ModularityMonitor:
                          released: Optional[Dict[str, str]] = None) -> float:
         with self.lock:
             policy = new if new is not None else old
-            # el proxy mira el grafo antes del cambio y, como antes, a la version anterior si la hay
-            # (en una desactivacion la nueva no tiene eventos)
-            t0 = time.perf_counter()
-            delta_proxy = self._proxy_delta(old if old is not None else new)
-            t_proxy = time.perf_counter() - t0
-
             builder = self.graph_builder
             leaving = [e.event_id for e in old.events] if old is not None else []
             if new is not None:
@@ -127,8 +117,7 @@ class ModularityMonitor:
                 op = "remove"
             else:
                 op = "move" if old is new else "update"
-            return self.record_swap(policy, op=op, delta_proxy=delta_proxy, t_proxy=t_proxy,
-                                    t_incremental=t_incremental, t_graph=t_graph)
+            return self.record_swap(policy, op=op, t_incremental=t_incremental, t_graph=t_graph)
 
     # comunidad donde la politica nueva sube mas Q, con la ganancia de Louvain para mover un bloque B
     # (sus eventos) desde una comunidad propia a c:  dQ = K_Bc/m - D_c*K_B/(2 m^2), donde K_Bc es el
@@ -174,9 +163,7 @@ class ModularityMonitor:
                     best, best_gain = comm, gain
             return best
 
-    # delta_proxy=None: se calcula aqui sobre el grafo actual
     def record_swap(self, policy: Optional[Policy] = None, *, op: Optional[str] = None,
-                    delta_proxy: Optional[float] = None, t_proxy: float = 0.0,
                     t_incremental: float = 0.0, t_graph: float = 0.0) -> float:
         if self.graph_builder.graph is None:
             return 0.0
@@ -187,19 +174,11 @@ class ModularityMonitor:
         self._stress   += delta
         self._swap_count += 1
 
-        if delta_proxy is None:
-            t0 = time.perf_counter()
-            delta_proxy = self._proxy_delta(policy)  # O(k), k = eventos de la politica
-            t_proxy = time.perf_counter() - t0
-        self._stress_proxy += delta_proxy
-
         q_networkx = t_networkx = None
         if self.verify_modularity:
             t0 = time.perf_counter()
             q_networkx = self._compute_modularity(self.graph_builder.graph)  # O(N+E)
             t_networkx = time.perf_counter() - t0
-
-        threshold_proxy_active = self._threshold_proxy
 
         self.history.append({
             "swap": self._swap_count,
@@ -214,17 +193,12 @@ class ModularityMonitor:
             "t_networkx_s": t_networkx,
             "t_incremental_s": t_incremental,
             "t_graph_s": t_graph,  # actualizar nodos y aristas, lo necesitan los dos metodos
-            "delta_proxy": delta_proxy,
-            "stress_proxy": self._stress_proxy,
-            "t_proxy_s": t_proxy,
-            "threshold_proxy": threshold_proxy_active,
             "rebuilds": self._rebuilds,
         })
 
         log.debug(
-            "Swap #%d — Q=%.4f  ΔQ=%.4f  estrés=%.4f  |  proxy Δ=%.6f  estrés_proxy=%.4f  umbral=%.4f  umbral_proxy=%s",
-            self._swap_count, q_new, delta, self._stress, delta_proxy, self._stress_proxy, self.threshold,
-            threshold_proxy_active,
+            "Swap #%d — Q=%.4f  ΔQ=%.4f  estrés=%.4f  umbral=%.4f",
+            self._swap_count, q_new, delta, self._stress, self.threshold,
         )
 
         # suficiente desgaste: reconstruccion nivel 4
@@ -233,30 +207,9 @@ class ModularityMonitor:
                 "Estrés %.4f ≥ umbral %.4f — iniciando reconstrucción de grafo en segundo plano",
                 self._stress, self.threshold,
             )
-            self._threshold_proxy = self._stress_proxy  # el proxy aprende el umbral de este ciclo
             self._trigger_rebuild()
 
         return delta
-
-    # suma k_i/2m de los eventos tocados
-    def _proxy_delta(self, policy: Optional[Policy]) -> float:
-        graph = self.graph_builder.graph
-        if graph is None or policy is None:
-            return 0.0
-
-        m = graph.number_of_edges()
-        if m == 0:
-            return 0.0
-
-        n = graph.number_of_nodes()
-        avg_degree = (2 * m / n) if n else 0.0
-
-        total = 0.0
-        for event in policy.events:
-            # evento nuevo: se usa el grado promedio
-            k = graph.degree(event.event_id) if event.event_id in graph else avg_degree
-            total += k / (2 * m)
-        return total
 
     async def on_policy_event(self, event: DomainEvent) -> None:
         policy_id = getattr(event, "policy_id", None)
@@ -267,9 +220,7 @@ class ModularityMonitor:
         return {
             "q_current":       round(self._q_current, 6),
             "stress":          round(self._stress, 6),
-            "stress_proxy":    round(self._stress_proxy, 6),
             "threshold":       self.threshold,
-            "threshold_proxy": round(self._threshold_proxy, 6) if self._threshold_proxy is not None else None,
             "swap_count":      self._swap_count,
             "rebuilds":        self._rebuilds,
             "rebuilding":      self._rebuilding,
@@ -277,7 +228,6 @@ class ModularityMonitor:
 
     def reset_stress(self) -> None:
         self._stress = 0.0
-        self._stress_proxy = 0.0
 
     # reconstruye en un hilo aparte para no bloquear
     def _trigger_rebuild(self) -> None:

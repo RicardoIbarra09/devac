@@ -179,7 +179,6 @@ def summarize(run: dict) -> dict:
         "max_abs_q_diff": max((abs(r["q_incremental"] - r["q_networkx"]) for r in rows), default=0.0),
         "mean_t_networkx_s": _mean([r["t_networkx_s"] for r in rows]),
         "mean_t_incremental_s": _mean([r["t_incremental_s"] for r in rows]),
-        "mean_t_proxy_s": _mean([r["t_proxy_s"] for r in rows]),
         "mean_t_graph_s": _mean([r["t_graph_s"] for r in rows]),
         "initial_build_s": run["initial_build_s"],
         "mean_rebuild_s": _mean(run["rebuild_s"]),
@@ -204,7 +203,7 @@ def _git(*cmd: str) -> Optional[str]:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="Q completa vs incremental vs proxy ante cambios de políticas")
+    parser = argparse.ArgumentParser(description="Q completa vs Q incremental ante cambios de políticas")
     parser.add_argument("--policies", default="experiments/politicas_un_evento.json")
     parser.add_argument("--scenario", choices=sorted(DEFAULT_CHANGES), required=True,
                         help="deactivation = desactivaciones (events=[]); mixed = altas, cambios, bajas, "
@@ -248,7 +247,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         files.append(path.name)
         print(f"  r{rep:02d}: {s['rebuilds']} reconstrucciones, estrés máx {s['max_stress_q']:.4f}, "
               f"Q completa {s['mean_t_networkx_s'] * 1e3:.2f} ms, incremental {s['mean_t_incremental_s'] * 1e6:.1f} us, "
-              f"proxy {s['mean_t_proxy_s'] * 1e6:.1f} us, |dQ| máx {s['max_abs_q_diff']:.1e}", flush=True)
+              f"|dQ| máx {s['max_abs_q_diff']:.1e}", flush=True)
 
     meta = {
         "script": "experiments/run_dynamics.py",
@@ -268,7 +267,6 @@ def main(argv: Optional[List[str]] = None) -> int:
             "q_networkx": "Q completa con networkx sobre el mismo grafo, solo para verificar",
             "t_networkx_s": "tiempo de la Q completa; t_real_s es el mismo",
             "t_incremental_s": "tiempo de actualizar L_c, D_c y m con los vecinos de los nodos que cambiaron",
-            "t_proxy_s": "tiempo del proxy (suma de k_i/2m de los eventos de la política)",
             "t_graph_s": "tiempo de actualizar nodos y aristas; lo necesitan la Q completa y la incremental",
             "rebuilds": "reconstrucciones hechas hasta este cambio, inclusive",
             "change": "cambio aplicado: add, update, remove, deactivate o reactivate",

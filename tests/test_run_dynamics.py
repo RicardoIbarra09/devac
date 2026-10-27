@@ -43,6 +43,6 @@ def test_corrida_escribe_filas_y_meta(tmp_path, capsys):
         assert len(rows) == 40
         for row in rows:
             assert abs(row["q_incremental"] - row["q_networkx"]) < 1e-9
-            assert {"t_networkx_s", "t_incremental_s", "t_proxy_s", "rebuilds", "change"} <= set(row)
+            assert {"t_networkx_s", "t_incremental_s", "t_graph_s", "rebuilds", "change"} <= set(row)
     assert all(r["max_abs_q_diff"] < 1e-9 for r in meta["replications"])
     capsys.readouterr()

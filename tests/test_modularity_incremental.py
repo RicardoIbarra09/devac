@@ -218,12 +218,11 @@ def test_desactivar_con_events_vacio_equivale_a_borrar(capsys):
         ev_b.remove_policy(pid)  # borrar
         assert _snapshot(b_a.graph) == _snapshot(b_b.graph), pid
         assert mon_a.q == mon_b.q, pid
-        # el proxy mira la version anterior en los dos casos
-        assert mon_a.history[-1]["delta_proxy"] == mon_b.history[-1]["delta_proxy"], pid
+        assert mon_a.history[-1]["delta_q"] == mon_b.history[-1]["delta_q"], pid
         expected = _networkx_q(b_a.graph, _evaluator_partition(ev_a, b_a.graph))
         assert abs(mon_a.q - expected) < TOL
 
-    assert sum(row["delta_proxy"] for row in mon_a.history) > 0
+    assert sum(row["delta_q"] for row in mon_a.history) > 0
     # la desactivada sigue registrada y en su comunidad, sin nodos
     assert len(ev_a.policies) == len(ev_b.policies) + 40
     capsys.readouterr()
