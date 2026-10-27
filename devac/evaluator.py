@@ -7,6 +7,9 @@ from devac.interval_tree import IntervalTree, _is_time_format
 import time
 
 
+PolicyChangeHook = Callable[[Optional[Policy], Optional[Policy], Dict[str, str]], None]
+
+
 class CommunityPolicyEvaluator:
     # nombres internos de las 5 dimensiones
     ATTRS = ["rol", "recurso", "ubicacion", "rango_horario", "accion"]
@@ -40,16 +43,19 @@ class CommunityPolicyEvaluator:
         # lo instala ModularityMonitor (ganancia de modularidad); sin el se usa la similitud por atributos
         self.community_assigner: Optional[Callable[[Policy], Optional[object]]] = None
 
-        # callbacks que se llaman al cambiar una politica, con (anterior, nueva):
-        # alta (None, p), baja (p, None), cambio (vieja, nueva), cambio de comunidad (p, p)
-        self._on_policy_change: List[Callable[[Optional[Policy], Optional[Policy]], None]] = []
+        # callbacks que se llaman al cambiar una politica, con (anterior, nueva, liberados):
+        # alta (None, p), baja (p, None), cambio (vieja, nueva), cambio de comunidad (p, p).
+        # liberados: event_id -> politica, eventos de otras politicas que volvieron a los indices
+        # porque la que los cubria cambio o se borro
+        self._on_policy_change: List[PolicyChangeHook] = []
 
-    def register_policy_change_hook(self, fn: Callable[[Optional[Policy], Optional[Policy]], None]) -> None:
+    def register_policy_change_hook(self, fn: "PolicyChangeHook") -> None:
         self._on_policy_change.append(fn)
 
-    def _notify_policy_change(self, old: Optional[Policy], new: Optional[Policy]) -> None:
+    def _notify_policy_change(self, old: Optional[Policy], new: Optional[Policy],
+                              released: Optional[Dict[str, str]] = None) -> None:
         for fn in self._on_policy_change:
-            fn(old, new)
+            fn(old, new, released or {})
 
     @staticmethod
     def _membership(policies_by_community: Dict[str, List[str]]) -> Dict[str, object]:
@@ -241,20 +247,23 @@ class CommunityPolicyEvaluator:
         self.policies[policy.policy_id] = policy
 
         if auto_assign_community:
-            if self.community_assigner is not None:
-                best_community = self.community_assigner(policy)
-                # sin evento no hay nodo, no tiene caso abrirle comunidad
-                if best_community is None and policy.events:
-                    best_community = self._new_community_id()
-            else:
-                best_community = self.most_similar_community(policy)  # la comunidad mas parecida
-                if best_community is None:
-                    best_community = self._new_community_id()  # todavia no hay ninguna
-
+            best_community = self._choose_community(policy)
             if best_community is not None:
                 self._assign(policy.policy_id, best_community)
 
         self._notify_policy_change(None, policy)  # avisa al monitor, aunque quede sin comunidad
+
+    def _choose_community(self, policy: Policy):
+        if self.community_assigner is not None:
+            best_community = self.community_assigner(policy)
+            # sin evento no hay nodo, no tiene caso abrirle comunidad
+            if best_community is None and policy.events:
+                best_community = self._new_community_id()
+            return best_community
+        best_community = self.most_similar_community(policy)  # la comunidad mas parecida
+        if best_community is None:
+            best_community = self._new_community_id()  # todavia no hay ninguna
+        return best_community
 
     def assign_policy_to_community(self, policy_id: str, community_id: str):
         self._assign(policy_id, community_id)
@@ -340,9 +349,8 @@ class CommunityPolicyEvaluator:
             print(f"[INFO] Política {policy_id} eliminada de comunidad {community_id}")
         else:
             print(f"[WARNING] Política {policy_id} no estaba asignada a ninguna comunidad")
-        for comm in released - {community_id}:
-            self._rebuild_community_indices(comm)
-        self._notify_policy_change(removed_policy, None)
+        self._reindex_released(released, skip=community_id)
+        self._notify_policy_change(removed_policy, None, released)
 
     def update_policy(self, updated_policy: Policy):
         pid = updated_policy.policy_id
@@ -363,27 +371,32 @@ class CommunityPolicyEvaluator:
 
         community_id = self.policy_community.get(pid)
         released = self._release_exclusions(pid)
-        if community_id is not None:
+        if community_id is None and updated_policy.events:
+            # estaba sin comunidad (p. ej. desactivada antes de una reconstruccion): se reactiva
+            community_id = self._choose_community(updated_policy)
+            self._assign(pid, community_id)
+            print(f"[INFO] Política {pid} reactivada en comunidad {community_id}")
+        elif community_id is not None:
             self._rebuild_community_indices(community_id)
             print(f"[INFO] Política {pid} actualizada en comunidad {community_id}")
-        else:
-            print(f"[WARNING] Política {pid} no estaba asignada a ninguna comunidad")
-        for comm in released - {community_id}:
-            self._rebuild_community_indices(comm)
-        self._notify_policy_change(previous_policy, updated_policy)
+        self._reindex_released(released, skip=community_id)
+        self._notify_policy_change(previous_policy, updated_policy, released)
 
     # al cambiar o borrar una politica, los eventos que ella cubria vuelven a los indices y los
     # suyos dejan de estar excluidos (su contenido ya no es el que se audito).
-    # devuelve las comunidades cuyos indices hay que rehacer
-    def _release_exclusions(self, policy_id: str) -> Set[object]:
-        released = [eid for eid, pair in self.excluded.items() if policy_id in pair]
-        communities = set()
-        for eid in released:
+    # devuelve los de otras politicas: event_id -> politica
+    def _release_exclusions(self, policy_id: str) -> Dict[str, str]:
+        released = {}
+        for eid in [eid for eid, pair in self.excluded.items() if policy_id in pair]:
             owner, _ = self.excluded.pop(eid)
-            comm = self.policy_community.get(owner)
-            if comm is not None:
-                communities.add(comm)
-        return communities
+            if owner != policy_id:
+                released[eid] = owner
+        return released
+
+    def _reindex_released(self, released: Dict[str, str], skip=None) -> None:
+        communities = {self.policy_community.get(owner) for owner in released.values()}
+        for comm in communities - {None, skip}:
+            self._rebuild_community_indices(comm)
 
     def move_policy_to_community(self, policy_id: str, target_community_id: str):
         if policy_id not in self.policies:

@@ -1,18 +1,22 @@
+import random
 import networkx as nx
 from networkx.algorithms import community
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 class CommunityDetector:
-    def __init__(self):
+    # seed: cada llamada a louvain toma su semilla de este generador, asi una corrida se puede repetir
+    def __init__(self, seed: Optional[int] = None):
+        self._rng = random.Random(seed) if seed is not None else None
         self.event_communities = {}
         self.event_to_community = {}
         self.policies_by_community = defaultdict(set)
 
     def detect_communities(self, graph: nx.Graph) -> Tuple[Dict[str, int], Dict[str, int]]:
-        # louvain, ojo: no es determinista
-        communities = community.louvain_communities(graph, weight="weight", resolution=1)
+        # louvain, ojo: sin semilla no es determinista
+        seed = self._rng.randrange(2**32) if self._rng is not None else None
+        communities = community.louvain_communities(graph, weight="weight", resolution=1, seed=seed)
         self.event_communities = {}
         self.event_to_community = {}
         for community_id, nodes in enumerate(communities):

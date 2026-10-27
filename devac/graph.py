@@ -186,12 +186,13 @@ class GraphBuilder:
                     found[other_id] = float(sim)
         return found
 
-    # mismos nodos y aristas que daria build_event_graph con los pesos congelados
-    def add_events(self, policy: Policy) -> List[str]:
+    # mismos nodos y aristas que daria build_event_graph con los pesos congelados.
+    # events: solo esos eventos de la politica (por defecto todos)
+    def add_events(self, policy: Policy, events: Optional[Iterable[Event]] = None) -> List[str]:
         if self.graph is None:
             self.graph = nx.Graph()
         added = []
-        for event in policy.events:
+        for event in policy.events if events is None else events:
             if event.event_id in self._nodes:
                 raise ValueError(f"el evento {event.event_id} ya esta en el grafo")
             neighbors = self.similar_events(event)

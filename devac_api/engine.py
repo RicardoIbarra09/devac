@@ -133,7 +133,7 @@ class DevacEngine:
             finally:
                 self._writing = False
 
-    def _on_policy_change(self, _old: Optional[Policy], _new: Optional[Policy]) -> None:
+    def _on_policy_change(self, _old: Optional[Policy], _new: Optional[Policy], _released: dict) -> None:
         self._mutations += 1
 
     def community_map(self) -> Dict[str, str]:

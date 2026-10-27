@@ -174,3 +174,115 @@ def _request_for(event):
         dim: AttributeComponent(attribute=getattr(event, dim).attribute, value=str(getattr(event, dim).value))
         for dim in DIMS
     })
+
+
+def _snapshot(graph):
+    nodes = {n: d for n, d in graph.nodes(data=True)}
+    edges = {tuple(sorted((u, v))): d["weight"] for u, v, d in graph.edges(data=True)}
+    return nodes, edges
+
+
+# dos copias independientes que arrancan de la misma particion (louvain no es determinista)
+def _twins(policies):
+    graph = GraphBuilder().build_event_graph(copy.deepcopy(policies), export=False)
+    detector = CommunityDetector()
+    _, event_to_community = detector.detect_communities(graph)
+    event_to_policy = {e.event_id: p.policy_id for p in policies for e in p.events}
+    pbc = detector.map_policies_to_communities(event_to_policy, event_to_community)
+    twins = []
+    for _ in range(2):
+        own = copy.deepcopy(policies)
+        builder = GraphBuilder()
+        builder.build_event_graph(own, export=False)
+        evaluator = CommunityPolicyEvaluator([], {})
+        evaluator.run(own, copy.deepcopy(pbc))
+        monitor = ModularityMonitor(evaluator, builder, detector, threshold=1e9, audit_policies=False)
+        twins.append((evaluator, builder, monitor))
+    return twins
+
+
+def test_desactivar_con_events_vacio_equivale_a_borrar(capsys):
+    rng = random.Random(8)
+    pool = PolicyLoader.from_file(str(POLICIES))
+    (ev_a, b_a, mon_a), (ev_b, b_b, mon_b) = _twins(pool)
+    assert _snapshot(b_a.graph) == _snapshot(b_b.graph)
+
+    for pid in rng.sample(sorted(ev_a.policies), 40):
+        ev_a.update_policy(ev_a.policies[pid].model_copy(update={"events": []}))  # desactivar
+        ev_b.remove_policy(pid)  # borrar
+        assert _snapshot(b_a.graph) == _snapshot(b_b.graph), pid
+        assert mon_a.q == mon_b.q, pid
+        # el proxy mira la version anterior en los dos casos
+        assert mon_a.history[-1]["delta_proxy"] == mon_b.history[-1]["delta_proxy"], pid
+        expected = _networkx_q(b_a.graph, _evaluator_partition(ev_a, b_a.graph))
+        assert abs(mon_a.q - expected) < TOL
+
+    assert sum(row["delta_proxy"] for row in mon_a.history) > 0
+    # la desactivada sigue registrada y en su comunidad, sin nodos
+    assert len(ev_a.policies) == len(ev_b.policies) + 40
+    capsys.readouterr()
+
+
+def test_reactivar_vuelve_a_poner_los_nodos(capsys):
+    pool = PolicyLoader.from_file(str(POLICIES))
+    evaluator, builder, monitor = _pipeline(copy.deepcopy(pool), 1e9)
+    before = _snapshot(builder.graph)
+    q_before = monitor.q
+    target = sorted(evaluator.policies)[7]
+    original = evaluator.policies[target]
+    evaluator.update_policy(original.model_copy(update={"events": []}))
+    evaluator.update_policy(original)
+    assert _snapshot(builder.graph) == before and abs(monitor.q - q_before) < TOL
+
+    # despues de una reconstruccion la desactivada se queda sin comunidad; al reactivar se le asigna una
+    evaluator.update_policy(original.model_copy(update={"events": []}))
+    monitor.rebuild_now()
+    assert target not in evaluator.policy_community
+    evaluator.update_policy(original)
+    assert target in evaluator.policy_community
+    assert all(e.event_id in monitor._q for e in original.events)
+    capsys.readouterr()
+
+
+def _used_reference(evaluator, weights=None):
+    used = [p.model_copy(update={"events": [e for e in p.events if e.event_id not in evaluator.excluded]})
+            for p in copy.deepcopy(list(evaluator.policies.values()))]
+    ref = GraphBuilder()
+    ref.build_event_graph(used, export=False, weights=weights)
+    return ref
+
+
+def test_eventos_excluidos_no_estan_en_el_grafo_ni_en_q(capsys):
+    pool = PolicyLoader.from_file(str(POLICIES))
+    wide = copy.deepcopy(pool[0])
+    wide.policy_id = "AMPLIA"
+    wide.events = wide.events[:1]
+    wide.events[0].event_id = "AMPLIA-e1"
+    wide.events[0].space.value = "*"  # cubre a la de abajo
+    narrow = copy.deepcopy(wide)
+    narrow.policy_id = "ESTRECHA"
+    narrow.events[0].event_id = "ESTRECHA-e1"
+    narrow.events[0].space.value = pool[0].events[0].space.value
+    policies = copy.deepcopy(pool) + [wide, narrow]
+
+    builder = GraphBuilder()
+    evaluator = CommunityPolicyEvaluator([], {})
+    evaluator.run(policies, {})
+    monitor = ModularityMonitor(evaluator, builder, CommunityDetector(), threshold=1e9)
+    monitor.rebuild_now()  # louvain + auditoria
+    assert evaluator.excluded.get("ESTRECHA-e1") == ("ESTRECHA", "AMPLIA")
+
+    # build completo: sin los excluidos y con pesos calculados sobre lo que queda
+    assert all(eid not in builder.graph for eid in evaluator.excluded)
+    ref = _used_reference(evaluator)
+    assert _snapshot(builder.graph) == _snapshot(ref.graph) and builder.weights == ref.weights
+    assert abs(monitor.q - _networkx_q(builder.graph, _evaluator_partition(evaluator, builder.graph))) < TOL
+
+    # incremental: al borrar la que cubre, el evento liberado entra al grafo y a Q
+    evaluator.remove_policy("AMPLIA")
+    assert "ESTRECHA-e1" not in evaluator.excluded
+    assert "ESTRECHA-e1" in builder.graph and "ESTRECHA-e1" in monitor._q
+    assert _snapshot(builder.graph) == _snapshot(_used_reference(evaluator, builder.weights).graph)
+    assert abs(monitor.q - _networkx_q(builder.graph, _evaluator_partition(evaluator, builder.graph))) < TOL
+    assert monitor.history[-1]["op"] == "remove"  # un solo cambio, no dos
+    capsys.readouterr()

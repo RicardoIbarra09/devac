@@ -69,14 +69,17 @@ class ModularityMonitor:
     def q(self) -> float:
         return self._q.q
 
-    # el grafo sigue a las politicas: salen los nodos de la version anterior y entran los de la nueva.
+    # el grafo sigue a lo que usa el evaluador: salen los nodos de la version anterior, entran los de
+    # la nueva (menos los excluidos por la auditoria) y los liberados de otras politicas.
     # Q se actualiza solo con los vecinos de esos nodos
-    def on_policy_change(self, old: Optional[Policy], new: Optional[Policy]) -> float:
+    def on_policy_change(self, old: Optional[Policy], new: Optional[Policy],
+                         released: Optional[Dict[str, str]] = None) -> float:
         with self.lock:
             policy = new if new is not None else old
-            # el proxy mira el grafo antes del cambio, como lo hacia antes
+            # el proxy mira el grafo antes del cambio y, como antes, a la version anterior si la hay
+            # (en una desactivacion la nueva no tiene eventos)
             t0 = time.perf_counter()
-            delta_proxy = self._proxy_delta(policy)
+            delta_proxy = self._proxy_delta(old if old is not None else new)
             t_proxy = time.perf_counter() - t0
 
             builder = self.graph_builder
@@ -90,16 +93,31 @@ class ModularityMonitor:
                 self._q.remove_node(builder.graph, event_id)
             t_incremental = time.perf_counter() - t0
 
+            excluded = self.evaluator.excluded
+            entering = []  # (politica, eventos)
+            if new is not None:
+                entering.append((new, [e for e in new.events if e.event_id not in excluded]))
+            by_owner: Dict[str, List[str]] = {}
+            for event_id, owner in (released or {}).items():
+                by_owner.setdefault(owner, []).append(event_id)
+            for owner, event_ids in by_owner.items():
+                policy_owner = self.evaluator.policies.get(owner)
+                if policy_owner is not None:
+                    wanted = set(event_ids)
+                    entering.append((policy_owner, [e for e in policy_owner.events
+                                                    if e.event_id in wanted and e.event_id not in builder]))
+
             t0 = time.perf_counter()
             builder.remove_events(leaving)
-            added = builder.add_events(new) if new is not None else []
+            added = [(p, builder.add_events(p, events)) for p, events in entering]
             t_graph = time.perf_counter() - t0
 
-            comm = self.evaluator.policy_community.get(new.policy_id) if new is not None else None
             t0 = time.perf_counter()
-            if comm is not None:
-                for event_id in added:
-                    self._q.add_node(builder.graph, event_id, comm)
+            for p, event_ids in added:
+                comm = self.evaluator.policy_community.get(p.policy_id)
+                if comm is not None:
+                    for event_id in event_ids:
+                        self._q.add_node(builder.graph, event_id, comm)
             t_incremental += time.perf_counter() - t0
 
             if old is None:
@@ -324,6 +342,14 @@ class ModularityMonitor:
             )
             excluded = self.last_audit_report.exclusions()
             log.info("[ModularityMonitor] Auditoría de políticas: %s", self.last_audit_report.summary())
+
+        if excluded:
+            # el grafo y Q solo llevan lo que usa el evaluador: se rehace sin los excluidos, con pesos
+            # calculados sobre esos eventos. la particion es la de louvain sobre el grafo completo,
+            # restringida a los nodos que quedan (la auditoria necesita comunidades para correr)
+            used = [p.model_copy(update={"events": [e for e in p.events if e.event_id not in excluded]})
+                    for p in policies]
+            self.graph_builder.build_event_graph(used, similarity_threshold=self.similarity_threshold)
 
         self.evaluator.run(policies, policies_by_community, excluded)  # swap en el evaluador
 
