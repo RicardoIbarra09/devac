@@ -1,6 +1,6 @@
 # uso:
-#   python3 graficas/make_charts.py   (matplotlib no esta en el entorno de poetry)
-#   python3 graficas/make_charts.py --data-dir experiments/resultados_dinamica --rep 3
+#   poetry run python graficas/make_charts.py   (matplotlib esta en el grupo charts)
+#   poetry run python graficas/make_charts.py --data-dir experiments/resultados_dinamica --rep 3
 #
 # lee lo que escribe experiments/run_dynamics.py:
 #   deactivation_rebuild_*   desactivaciones con reconstrucciones (la mayoria de las figuras)

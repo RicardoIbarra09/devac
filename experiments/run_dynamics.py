@@ -128,12 +128,13 @@ def run_once(policies: List[dict], plan: List[dict], args, louvain_seed: int) ->
         audit_policies=not args.no_audit, verify_modularity=True,
     )
 
-    rebuild_times = []
+    rebuild_times, rebuild_phases = [], []
 
     def timed_rebuild() -> bool:
         t0 = time.perf_counter()
         done = monitor.rebuild_now()
         rebuild_times.append(time.perf_counter() - t0)
+        rebuild_phases.append(dict(monitor.last_rebuild_stats))
         return done
 
     monitor._trigger_rebuild = timed_rebuild  # en el mismo hilo, si no la corrida no se repite igual
@@ -157,6 +158,7 @@ def run_once(policies: List[dict], plan: List[dict], args, louvain_seed: int) ->
         "louvain_seed": louvain_seed,
         "initial_build_s": rebuild_times[0],
         "rebuild_s": rebuild_times[1:],
+        "rebuild_phases": rebuild_phases,  # el primero es el build inicial
         "final_nodes": graph.number_of_nodes(),
         "final_edges": graph.number_of_edges(),
         "final_communities": len(evaluator.policies_by_community),
@@ -181,6 +183,13 @@ def summarize(run: dict) -> dict:
         "mean_t_graph_s": _mean([r["t_graph_s"] for r in rows]),
         "initial_build_s": run["initial_build_s"],
         "mean_rebuild_s": _mean(run["rebuild_s"]),
+        # segunda pasada: grafo sin excluidos + louvain sobre el; incluye el build inicial
+        "mean_second_pass_s": _mean([ph["t_build_used_s"] + ph["t_louvain_used_s"] for ph in run["rebuild_phases"]]),
+        "mean_rebuild_phases_s": {
+            key: _mean([ph[key] for ph in run["rebuild_phases"]])
+            for key in ("t_build_s", "t_louvain_s", "t_audit_s", "t_build_used_s", "t_louvain_used_s", "t_index_s", "t_q_s")
+        },
+        "excluded_initial": run["rebuild_phases"][0]["excluded"],
         "final_nodes": run["final_nodes"],
         "final_edges": run["final_edges"],
         "final_communities": run["final_communities"],

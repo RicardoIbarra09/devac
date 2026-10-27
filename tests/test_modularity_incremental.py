@@ -169,9 +169,15 @@ def test_politica_sin_vecinos_abre_comunidad(capsys):
     capsys.readouterr()
 
 
+# peticion concreta que cumple el evento: de un rango o un conjunto toma el primer valor
 def _request_for(event):
+    def concrete(value):
+        if isinstance(value, dict):
+            return str((value.get("range") or value.get("in"))[0])
+        return str(value)
+
     return AccessRequest(**{
-        dim: AttributeComponent(attribute=getattr(event, dim).attribute, value=str(getattr(event, dim).value))
+        dim: AttributeComponent(attribute=getattr(event, dim).attribute, value=concrete(getattr(event, dim).value))
         for dim in DIMS
     })
 
@@ -252,7 +258,8 @@ def _used_reference(evaluator, weights=None):
     return ref
 
 
-def test_eventos_excluidos_no_estan_en_el_grafo_ni_en_q(capsys):
+# nimbuslab mas AMPLIA, que cubre a ESTRECHA con el mismo efecto
+def _with_dominated(seed=None):
     pool = PolicyLoader.from_file(str(POLICIES))
     wide = copy.deepcopy(pool[0])
     wide.policy_id = "AMPLIA"
@@ -268,8 +275,13 @@ def test_eventos_excluidos_no_estan_en_el_grafo_ni_en_q(capsys):
     builder = GraphBuilder()
     evaluator = CommunityPolicyEvaluator([], {})
     evaluator.run(policies, {})
-    monitor = ModularityMonitor(evaluator, builder, CommunityDetector(), threshold=1e9)
+    monitor = ModularityMonitor(evaluator, builder, CommunityDetector(seed=seed), threshold=1e9)
     monitor.rebuild_now()  # louvain + auditoria
+    return evaluator, builder, monitor
+
+
+def test_eventos_excluidos_no_estan_en_el_grafo_ni_en_q(capsys):
+    evaluator, builder, monitor = _with_dominated()
     assert evaluator.excluded.get("ESTRECHA-e1") == ("ESTRECHA", "AMPLIA")
 
     # build completo: sin los excluidos y con pesos calculados sobre lo que queda
@@ -285,4 +297,29 @@ def test_eventos_excluidos_no_estan_en_el_grafo_ni_en_q(capsys):
     assert _snapshot(builder.graph) == _snapshot(_used_reference(evaluator, builder.weights).graph)
     assert abs(monitor.q - _networkx_q(builder.graph, _evaluator_partition(evaluator, builder.graph))) < TOL
     assert monitor.history[-1]["op"] == "remove"  # un solo cambio, no dos
+    capsys.readouterr()
+
+
+def test_particion_final_es_louvain_sobre_el_grafo_usado(capsys):
+    evaluator, builder, monitor = _with_dominated(seed=5)
+    stats = monitor.last_rebuild_stats
+    assert stats["excluded"] == len(evaluator.excluded) > 0
+
+    # louvain con la misma semilla sobre el grafo sin excluidos da exactamente la particion del evaluador
+    ref = _used_reference(evaluator)
+    _, event_to_community = CommunityDetector().detect_communities(ref.graph, seed=stats["louvain_seed"])
+    groups = defaultdict(set)
+    for node, comm in event_to_community.items():
+        groups[comm].add(ref.graph.nodes[node]["policy_id"])
+    assert {frozenset(pids) for pids in evaluator.policies_by_community.values()} == {frozenset(g) for g in groups.values()}
+    assert evaluator.validate_integrity() == []
+
+    # ESTRECHA tenia todo excluido y se quedo sin comunidad; al borrar AMPLIA se le asigna una
+    assert "ESTRECHA" not in evaluator.policy_community
+    request = _request_for(evaluator.policies["ESTRECHA"].events[0])
+    assert evaluator.evaluate(request)["policy_id"] == "AMPLIA"
+    evaluator.remove_policy("AMPLIA")
+    assert "ESTRECHA" in evaluator.policy_community
+    assert evaluator.evaluate(_request_for(evaluator.policies["ESTRECHA"].events[0]))["policy_id"] == "ESTRECHA"
+    assert abs(monitor.q - _networkx_q(builder.graph, _evaluator_partition(evaluator, builder.graph))) < TOL
     capsys.readouterr()

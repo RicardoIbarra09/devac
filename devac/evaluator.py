@@ -394,8 +394,19 @@ class CommunityPolicyEvaluator:
         return released
 
     def _reindex_released(self, released: Dict[str, str], skip=None) -> None:
-        communities = {self.policy_community.get(owner) for owner in released.values()}
-        for comm in communities - {None, skip}:
+        communities = set()
+        for owner in sorted(set(released.values())):
+            comm = self.policy_community.get(owner)
+            if comm is not None:
+                communities.add(comm)
+            elif owner in self.policies:
+                # tenia todos sus eventos excluidos y la particion no le dio comunidad
+                policy = self.policies[owner]
+                usable = policy.model_copy(update={"events": [e for e in policy.events if e.event_id not in self.excluded]})
+                comm = self._choose_community(usable)
+                if comm is not None:
+                    self._assign(owner, comm)  # ya rehace los indices de esa comunidad
+        for comm in communities - {skip}:
             self._rebuild_community_indices(comm)
 
     def move_policy_to_community(self, policy_id: str, target_community_id: str):
@@ -606,8 +617,8 @@ class CommunityPolicyEvaluator:
 
         for pid in self.policies:
             if pid not in assigned_pids:
-                # politica vacia = inactiva, es normal que no tenga comunidad
-                if len(self.policies[pid].events) == 0:
+                # sin eventos que usar (vacia o con todos excluidos) = inactiva, es normal que no tenga comunidad
+                if all(e.event_id in self.excluded for e in self.policies[pid].events):
                     continue
                 issues.append(f"Política {pid} no está asignada a ninguna comunidad")
 

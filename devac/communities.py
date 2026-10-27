@@ -13,9 +13,15 @@ class CommunityDetector:
         self.event_to_community = {}
         self.policies_by_community = defaultdict(set)
 
-    def detect_communities(self, graph: nx.Graph) -> Tuple[Dict[str, int], Dict[str, int]]:
+    # semilla para la siguiente corrida de louvain; None si el detector no tiene generador
+    def next_seed(self) -> Optional[int]:
+        return self._rng.randrange(2**32) if self._rng is not None else None
+
+    # seed: la de esta corrida; si no se pasa, sale del generador del detector
+    def detect_communities(self, graph: nx.Graph, seed: Optional[int] = None) -> Tuple[Dict[str, int], Dict[str, int]]:
         # louvain, ojo: sin semilla no es determinista
-        seed = self._rng.randrange(2**32) if self._rng is not None else None
+        if seed is None:
+            seed = self.next_seed()
         communities = community.louvain_communities(graph, weight="weight", resolution=1, seed=seed)
         self.event_communities = {}
         self.event_to_community = {}

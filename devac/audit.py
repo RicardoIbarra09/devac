@@ -284,23 +284,36 @@ def audit_and_mitigate(
             dominated_by_policy=dom_pid, dominated_by_event=dom_eid,
         ))
 
+    new_policies_by_community, report.reordered_communities = order_by_priority(
+        policies_by_community, report.conflicts, conflict_priority
+    )
+
+    report.duration_seconds = time.perf_counter() - start
+    return list(policies_by_id.values()), new_policies_by_community, report
+
+
+# en cada comunidad, las politicas con el efecto ganador de un conflicto van primero.
+# devuelve la particion reordenada y las comunidades que cambiaron
+def order_by_priority(
+    policies_by_community: Dict[str, List[str]],
+    conflicts: List[PolicyConflict],
+    conflict_priority: str = "deny",
+) -> Tuple[Dict[str, List[str]], List[str]]:
     policy_to_comm = {pid: comm for comm, pids in policies_by_community.items() for pid in pids}
     losers_by_comm: Dict[str, set] = {}
-    for c in report.conflicts:
+    for c in conflicts:
         for pid, effect in ((c.policy_a, c.effect_a), (c.policy_b, c.effect_b)):
             if effect != conflict_priority:
                 comm = policy_to_comm.get(pid)
                 if comm is not None:
                     losers_by_comm.setdefault(comm, set()).add(pid)
 
-    new_policies_by_community = {c: list(pids) for c, pids in policies_by_community.items()}
+    ordered = {c: list(pids) for c, pids in policies_by_community.items()}
+    reordered = []
     for comm, losers in losers_by_comm.items():
-        pids = new_policies_by_community[comm]
-        # el efecto ganador queda primero en la comunidad
+        pids = ordered[comm]
         new_order = sorted(pids, key=lambda p: 1 if p in losers else 0)
         if new_order != pids:
-            new_policies_by_community[comm] = new_order
-            report.reordered_communities.append(comm)
-
-    report.duration_seconds = time.perf_counter() - start
-    return list(policies_by_id.values()), new_policies_by_community, report
+            ordered[comm] = new_order
+            reordered.append(comm)
+    return ordered, reordered

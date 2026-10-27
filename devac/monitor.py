@@ -11,7 +11,7 @@ from devac.events import DomainEvent
 from devac.evaluator import CommunityPolicyEvaluator
 from devac.graph import GraphBuilder
 from devac.communities import CommunityDetector
-from devac.audit import audit_and_mitigate
+from devac.audit import audit_and_mitigate, order_by_priority
 from devac.modularity import IncrementalModularity
 from devac.models import Policy
 
@@ -38,6 +38,7 @@ class ModularityMonitor:
         self.audit_policies       = audit_policies
         self.conflict_priority    = conflict_priority
         self.last_audit_report    = None
+        self.last_rebuild_stats: Dict[str, object] = {}  # tiempos por fase de la ultima reconstruccion
         self.verify_modularity    = verify_modularity  # tambien calcula Q completa con networkx, para comparar
 
         self._stress: float          = 0.0  # suma de |dQ| desde la ultima reconstruccion
@@ -318,42 +319,61 @@ class ModularityMonitor:
     def _rebuild_locked(self) -> None:
         log.info("[ModularityMonitor] Reconstruyendo grafo…")
         policies = list(self.evaluator.policies.values())
+        stats: Dict[str, object] = {}
+        clock = time.perf_counter
 
-        graph = self.graph_builder.build_event_graph(
-            policies, similarity_threshold=self.similarity_threshold
-        )
+        # la misma semilla en las dos pasadas de louvain
+        seed = self.community_detector.next_seed()
+        stats["louvain_seed"] = seed
 
-        event_communities, event_to_community = self.community_detector.detect_communities(graph)
+        t0 = clock()
+        graph = self.graph_builder.build_event_graph(policies, similarity_threshold=self.similarity_threshold)
+        stats["t_build_s"] = clock() - t0
 
-        event_to_policy = {}
-        for policy in policies:
-            for event in policy.events:
-                event_to_policy[event.event_id] = policy.policy_id
-
-        policies_by_community = self.community_detector.map_policies_to_communities(
-            event_to_policy, event_to_community
-        )
+        t0 = clock()
+        policies_by_community = self._louvain(graph, policies, seed)
+        stats["t_louvain_s"] = clock() - t0
 
         # los redundantes quedan fuera de los indices, no de sus politicas
         excluded = {}
+        stats["t_audit_s"] = 0.0
         if self.audit_policies:
+            t0 = clock()
             policies, policies_by_community, self.last_audit_report = audit_and_mitigate(
                 policies, policies_by_community, conflict_priority=self.conflict_priority
             )
             excluded = self.last_audit_report.exclusions()
+            stats["t_audit_s"] = clock() - t0
             log.info("[ModularityMonitor] Auditoría de políticas: %s", self.last_audit_report.summary())
+        stats["excluded"] = len(excluded)
 
+        # la auditoria necesita comunidades, pero la particion final se calcula sobre el grafo que de
+        # verdad se usa: sin los excluidos y con pesos de esos eventos. una politica con todos sus
+        # eventos excluidos se queda sin comunidad hasta que se libere alguno
+        stats["t_build_used_s"] = stats["t_louvain_used_s"] = 0.0
         if excluded:
-            # el grafo y Q solo llevan lo que usa el evaluador: se rehace sin los excluidos, con pesos
-            # calculados sobre esos eventos. la particion es la de louvain sobre el grafo completo,
-            # restringida a los nodos que quedan (la auditoria necesita comunidades para correr)
             used = [p.model_copy(update={"events": [e for e in p.events if e.event_id not in excluded]})
                     for p in policies]
-            self.graph_builder.build_event_graph(used, similarity_threshold=self.similarity_threshold)
+            t0 = clock()
+            graph = self.graph_builder.build_event_graph(used, similarity_threshold=self.similarity_threshold)
+            stats["t_build_used_s"] = clock() - t0
+            t0 = clock()
+            policies_by_community = self._louvain(graph, used, seed)
+            if self.last_audit_report is not None:
+                policies_by_community, _ = order_by_priority(
+                    policies_by_community, self.last_audit_report.conflicts, self.conflict_priority
+                )
+            stats["t_louvain_used_s"] = clock() - t0
 
+        t0 = clock()
         self.evaluator.run(policies, policies_by_community, excluded)  # swap en el evaluador
+        stats["t_index_s"] = clock() - t0
 
+        t0 = clock()
         self._reset_modularity()  # pesos y particion nuevos: los dos desgastes vuelven a cero
+        stats["t_q_s"] = clock() - t0
+        stats["communities"] = len(policies_by_community)
+        self.last_rebuild_stats = stats
         self.reset_stress()
         self._rebuilds += 1
 
@@ -361,6 +381,11 @@ class ModularityMonitor:
             "[ModularityMonitor] Reconstrucción completada — Q=%.4f  rebuilds=%d",
             self._q_current, self._rebuilds,
         )
+
+    def _louvain(self, graph: nx.Graph, policies: List[Policy], seed: Optional[int]) -> Dict[object, List[str]]:
+        _, event_to_community = self.community_detector.detect_communities(graph, seed=seed)
+        event_to_policy = {e.event_id: p.policy_id for p in policies for e in p.events}
+        return self.community_detector.map_policies_to_communities(event_to_policy, event_to_community)
 
     # nodo -> comunidad segun el evaluador; los nodos de politicas sin comunidad no cuentan
     def _partition(self, graph: nx.Graph) -> Dict[str, object]:
