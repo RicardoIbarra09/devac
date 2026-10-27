@@ -233,6 +233,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"{args.scenario}: {len(plan)} cambios {counts}, umbral {args.stress_threshold}, {args.reps} repeticiones")
 
     started = datetime.now(timezone.utc)
+    # se lee al arrancar: el commit con el que corre el codigo. los archivos sin seguimiento no cuentan
+    # (otras corridas escriben resultados mientras tanto)
+    commit = _git("rev-parse", "HEAD")
+    dirty = bool(_git("status", "--porcelain", "--untracked-files=no"))
     summaries, files = [], []
     for rep in range(1, args.reps + 1):
         run = run_once(policies, plan, args, louvain_seed=args.seed * 1000 + rep)
@@ -253,8 +257,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         "plan_counts": counts,
         "started_utc": started.isoformat(timespec="seconds"),
         "finished_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "commit": _git("rev-parse", "HEAD"),
-        "dirty": bool(_git("status", "--porcelain")),  # hubo cambios sin commit al correr
+        "commit": commit,
+        "dirty": dirty,  # habia cambios sin commit en archivos con seguimiento al arrancar
         "python": platform.python_version(),
         "networkx": nx.__version__,
         "machine": platform.platform(),
