@@ -46,3 +46,42 @@ def test_corrida_escribe_filas_y_meta(tmp_path, capsys):
             assert {"t_networkx_s", "t_incremental_s", "t_graph_s", "rebuilds", "change"} <= set(row)
     assert all(r["max_abs_q_diff"] < 1e-9 for r in meta["replications"])
     capsys.readouterr()
+
+
+TIMES = {"t_real_s", "t_networkx_s", "t_incremental_s", "t_graph_s"}
+
+
+def _without_times(rows):
+    return [{k: v for k, v in row.items() if k not in TIMES} for row in rows]
+
+
+# dos tareas de slurm (--rep) juntadas por resumen_e4 dan lo mismo que una corrida con --reps 2
+def test_repeticiones_sueltas_y_resumen_e4(tmp_path, capsys):
+    import importlib.util
+
+    common = ["--policies", POLICIES, "--scenario", "deactivation", "--changes", "30", "--stress-threshold", "0.02"]
+    assert main(common + ["--reps", "2", "--out-dir", str(tmp_path / "junta")]) == 0
+    for rep in ("1", "2"):
+        assert main(common + ["--rep", rep, "--out-dir", str(tmp_path / "suelta")]) == 0
+
+    spec = importlib.util.spec_from_file_location("resumen_e4", ROOT / "clusterExperimentos/E4/resumen_e4.py")
+    resumen = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(resumen)
+    [(config, merged)] = resumen.merge(tmp_path / "suelta")
+    whole = json.loads((tmp_path / "junta" / "deactivation_rebuild_meta.json").read_text())
+
+    assert config == "deactivation_rebuild" and merged["files"] == whole["files"]
+    for name in whole["files"]:
+        a = json.loads((tmp_path / "junta" / name).read_text())
+        b = json.loads((tmp_path / "suelta" / name).read_text())
+        assert _without_times(a) == _without_times(b)
+    assert [r["louvain_seed"] for r in merged["replications"]] == [r["louvain_seed"] for r in whole["replications"]]
+    assert [r["rebuilds"] for r in merged["replications"]] == [r["rebuilds"] for r in whole["replications"]]
+
+    # y make_charts lee lo que quedo junto
+    spec = importlib.util.spec_from_file_location("make_charts", ROOT / "graficas/make_charts.py")
+    charts = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(charts)
+    charts.main(["--data-dir", str(tmp_path / "suelta"), "--out-dir", str(tmp_path / "figuras")])
+    assert (tmp_path / "figuras" / "fig_trayectoria_estres.png").exists()
+    capsys.readouterr()

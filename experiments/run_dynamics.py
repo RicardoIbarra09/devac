@@ -2,6 +2,7 @@
 #   poetry run python experiments/run_dynamics.py --scenario deactivation --reps 10
 #   poetry run python experiments/run_dynamics.py --scenario deactivation --reps 10 --stress-threshold 1e9
 #   poetry run python experiments/run_dynamics.py --scenario mixed --changes 821 --reps 10
+#   python3 experiments/run_dynamics.py --scenario mixed --rep 3   (una sola repeticion, p. ej. una tarea de slurm)
 #
 # cada repeticion aplica la misma secuencia de cambios (sale de --seed); entre repeticiones solo
 # cambia la semilla de louvain. por cada corrida escribe <escenario>_<etiqueta>_rNN.json con una
@@ -12,9 +13,11 @@ import contextlib
 import copy
 import io
 import json
+import os
 import platform
 import random
 import statistics
+import socket
 import subprocess
 import sys
 import time
@@ -195,6 +198,17 @@ def summarize(run: dict) -> dict:
     }
 
 
+def _cpu_model() -> str:
+    try:
+        with open("/proc/cpuinfo", encoding="utf-8") as f:
+            for line in f:
+                if line.lower().startswith("model name"):
+                    return line.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    return platform.processor()
+
+
 def _git(*cmd: str) -> Optional[str]:
     try:
         return subprocess.run(["git", *cmd], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
@@ -215,12 +229,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--no-audit", action="store_true")
     parser.add_argument("--seed", type=int, default=1, help="fija la secuencia de cambios")
     parser.add_argument("--reps", type=int, default=10, help="repeticiones; cambia la semilla de louvain")
+    parser.add_argument("--rep", type=int, help="corre solo esa repeticion (misma semilla de louvain que en una "
+                                                "corrida completa) y escribe su propio _rNN_meta.json")
     parser.add_argument("--tag", help="por defecto rebuild o norebuild según el umbral")
     parser.add_argument("--out-dir", default="experiments/resultados_dinamica")
     args = parser.parse_args(argv)
 
     if args.reps < 1:
         parser.error("--reps debe ser al menos 1")
+    if args.rep is not None and args.rep < 1:
+        parser.error("--rep debe ser al menos 1")
+    reps = [args.rep] if args.rep is not None else list(range(1, args.reps + 1))
     changes = args.changes or DEFAULT_CHANGES[args.scenario]
     tag = args.tag or ("norebuild" if args.stress_threshold >= 1e6 else "rebuild")
     out_dir = ROOT / args.out_dir
@@ -230,15 +249,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     plan = build_plan(policies, args.scenario, changes, args.seed)
     counts = {k: sum(1 for c in plan if c["change"] == k) for k in sorted({c["change"] for c in plan})}
     # flush: con la salida redirigida a un log, sin esto no se ve el avance hasta el final
-    print(f"{args.scenario}: {len(plan)} cambios {counts}, umbral {args.stress_threshold}, {args.reps} repeticiones", flush=True)
+    print(f"{args.scenario}: {len(plan)} cambios {counts}, umbral {args.stress_threshold}, repeticiones {reps}", flush=True)
 
     started = datetime.now(timezone.utc)
     # se lee al arrancar: el commit con el que corre el codigo. los archivos sin seguimiento no cuentan
     # (otras corridas escriben resultados mientras tanto)
-    commit = _git("rev-parse", "HEAD")
-    dirty = bool(_git("status", "--porcelain", "--untracked-files=no"))
+    # en el cluster puede no haber repo: common.sh exporta DEVAC_COMMIT
+    commit = _git("rev-parse", "HEAD") or os.environ.get("DEVAC_COMMIT")
+    status = _git("status", "--porcelain", "--untracked-files=no")
+    dirty = bool(status) if status is not None else None  # None = no se pudo saber
     summaries, files = [], []
-    for rep in range(1, args.reps + 1):
+    for rep in reps:
         run = run_once(policies, plan, args, louvain_seed=args.seed * 1000 + rep)
         path = out_dir / f"{args.scenario}_{tag}_r{rep:02d}.json"
         path.write_text(json.dumps(run["rows"], ensure_ascii=False), encoding="utf-8")
@@ -262,6 +283,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         "python": platform.python_version(),
         "networkx": nx.__version__,
         "machine": platform.platform(),
+        "node": socket.gethostname(),
+        "cpu": _cpu_model(),
+        "slurm_job_id": os.environ.get("SLURM_ARRAY_JOB_ID") or os.environ.get("SLURM_JOB_ID"),
+        "slurm_array_task_id": os.environ.get("SLURM_ARRAY_TASK_ID"),
         "columns": {
             "q_incremental": "Q incremental (la que mueve el estrés); q_real es la misma",
             "q_networkx": "Q completa con networkx sobre el mismo grafo, solo para verificar",
@@ -274,7 +299,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         "files": files,
         "replications": summaries,
     }
-    meta_path = out_dir / f"{args.scenario}_{tag}_meta.json"
+    # una sola repeticion: su meta va aparte y resumen_e4.py los junta
+    suffix = f"_r{args.rep:02d}" if args.rep is not None else ""
+    meta_path = out_dir / f"{args.scenario}_{tag}{suffix}_meta.json"
     meta_path.write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Resultados en {out_dir}/ ({meta_path.name})")
     return 0
