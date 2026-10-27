@@ -230,7 +230,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     policies = [p.model_dump() for p in PolicyLoader.from_file(str(ROOT / args.policies))]
     plan = build_plan(policies, args.scenario, changes, args.seed)
     counts = {k: sum(1 for c in plan if c["change"] == k) for k in sorted({c["change"] for c in plan})}
-    print(f"{args.scenario}: {len(plan)} cambios {counts}, umbral {args.stress_threshold}, {args.reps} repeticiones")
+    # flush: con la salida redirigida a un log, sin esto no se ve el avance hasta el final
+    print(f"{args.scenario}: {len(plan)} cambios {counts}, umbral {args.stress_threshold}, {args.reps} repeticiones", flush=True)
 
     started = datetime.now(timezone.utc)
     # se lee al arrancar: el commit con el que corre el codigo. los archivos sin seguimiento no cuentan
@@ -247,7 +248,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         files.append(path.name)
         print(f"  r{rep:02d}: {s['rebuilds']} reconstrucciones, estrés máx {s['max_stress_q']:.4f}, "
               f"Q completa {s['mean_t_networkx_s'] * 1e3:.2f} ms, incremental {s['mean_t_incremental_s'] * 1e6:.1f} us, "
-              f"proxy {s['mean_t_proxy_s'] * 1e6:.1f} us, |dQ| máx {s['max_abs_q_diff']:.1e}")
+              f"proxy {s['mean_t_proxy_s'] * 1e6:.1f} us, |dQ| máx {s['max_abs_q_diff']:.1e}", flush=True)
 
     meta = {
         "script": "experiments/run_dynamics.py",
