@@ -14,6 +14,7 @@ class CommunityPolicyEvaluator:
     def __init__(self, policies: List[Policy] = [], policies_by_community: Dict[str, List[str]] = {}):
         self.policies: Dict[str, Policy] = {p.policy_id: p for p in policies}
         self.policies_by_community = policies_by_community
+        self.policy_community: Dict[str, object] = self._membership(policies_by_community)
 
         # attr -> valor -> comunidades que lo tienen
         self.value_to_comms: Dict[str, Dict[str, Set[str]]] = {attr: defaultdict(set) for attr in self.ATTRS}
@@ -28,22 +29,39 @@ class CommunityPolicyEvaluator:
         self.interval_tree: IntervalTree = IntervalTree()  # para rangos HH:MM
         self.interval_tree_deny: IntervalTree = IntervalTree()
 
+        # eventos que la auditoria encontro cubiertos por otro del mismo efecto:
+        # event_id -> (su politica, la politica que lo cubre). siguen en su politica, pero no se
+        # indexan ni se comparan mientras la que los cubre no cambie
+        self.excluded: Dict[str, Tuple[str, str]] = {}
+
         self.attribute_weights: Dict[str, float] = {}
 
-        # callbacks que se llaman al cambiar una politica
-        self._on_policy_change: List[Callable[[], None]] = []
+        # elige la comunidad de una politica nueva; None = abrir una comunidad para ella.
+        # lo instala ModularityMonitor (ganancia de modularidad); sin el se usa la similitud por atributos
+        self.community_assigner: Optional[Callable[[Policy], Optional[object]]] = None
 
-    def register_policy_change_hook(self, fn: Callable[[Optional[Policy]], None]) -> None:
+        # callbacks que se llaman al cambiar una politica, con (anterior, nueva):
+        # alta (None, p), baja (p, None), cambio (vieja, nueva), cambio de comunidad (p, p)
+        self._on_policy_change: List[Callable[[Optional[Policy], Optional[Policy]], None]] = []
+
+    def register_policy_change_hook(self, fn: Callable[[Optional[Policy], Optional[Policy]], None]) -> None:
         self._on_policy_change.append(fn)
 
-    def _notify_policy_change(self, policy: Optional[Policy] = None) -> None:
+    def _notify_policy_change(self, old: Optional[Policy], new: Optional[Policy]) -> None:
         for fn in self._on_policy_change:
-            fn(policy)
+            fn(old, new)
+
+    @staticmethod
+    def _membership(policies_by_community: Dict[str, List[str]]) -> Dict[str, object]:
+        return {pid: comm for comm, pids in policies_by_community.items() for pid in pids}
 
     # construye todo desde cero
-    def run(self, policies: List[Policy], policies_by_community: Dict[str, List[str]]):
+    def run(self, policies: List[Policy], policies_by_community: Dict[str, List[str]],
+            excluded: Optional[Dict[str, Tuple[str, str]]] = None):
         self.policies = {p.policy_id: p for p in policies}
         self.policies_by_community = policies_by_community
+        self.policy_community = self._membership(policies_by_community)
+        self.excluded = dict(excluded or {})
 
         self.attribute_weights = GraphBuilder.calculate_attribute_weights(policies)
 
@@ -75,6 +93,8 @@ class CommunityPolicyEvaluator:
                     if isinstance(e.space.value,   str): e.space.value   = e.space.value.strip().lower()
                     if isinstance(e.time.value,    str): e.time.value    = e.time.value.strip().lower()
                     if isinstance(e.action.value,  str): e.action.value  = e.action.value.strip().lower()
+                    if e.event_id in self.excluded:
+                        continue
 
                     events.append(e)
                     new_event_policy_effect[e.event_id] = policy.effect
@@ -143,6 +163,8 @@ class CommunityPolicyEvaluator:
                 if isinstance(e.space.value,   str): e.space.value   = e.space.value.strip().lower()
                 if isinstance(e.time.value,    str): e.time.value    = e.time.value.strip().lower()
                 if isinstance(e.action.value,  str): e.action.value  = e.action.value.strip().lower()
+                if e.event_id in self.excluded:
+                    continue
 
                 events.append(e)
                 self.event_policy_effect[e.event_id] = policy.effect
@@ -219,18 +241,27 @@ class CommunityPolicyEvaluator:
         self.policies[policy.policy_id] = policy
 
         if auto_assign_community:
-            # la comunidad mas parecida
-            best_community = self._find_best_community_for_policy(policy)
+            if self.community_assigner is not None:
+                best_community = self.community_assigner(policy)
+                # sin evento no hay nodo, no tiene caso abrirle comunidad
+                if best_community is None and policy.events:
+                    best_community = self._new_community_id()
+            else:
+                best_community = self.most_similar_community(policy)  # la comunidad mas parecida
+                if best_community is None:
+                    best_community = self._new_community_id()  # todavia no hay ninguna
 
-            if best_community is None:
-                print(f"[WARNING] No se encontró comunidad adecuada para política {policy.policy_id}")
-                return
+            if best_community is not None:
+                self._assign(policy.policy_id, best_community)
 
-            self.assign_policy_to_community(policy.policy_id, best_community)
-
-        self._notify_policy_change(policy)  # avisa al monitor
+        self._notify_policy_change(None, policy)  # avisa al monitor, aunque quede sin comunidad
 
     def assign_policy_to_community(self, policy_id: str, community_id: str):
+        self._assign(policy_id, community_id)
+        policy = self.policies.get(policy_id)
+        self._notify_policy_change(policy, policy)
+
+    def _assign(self, policy_id: str, community_id: str) -> None:
         if community_id not in self.policies_by_community:
             self.policies_by_community[community_id] = []
             self.freq[community_id] = {attr: defaultdict(int) for attr in self.ATTRS}
@@ -238,11 +269,21 @@ class CommunityPolicyEvaluator:
 
         if policy_id not in self.policies_by_community[community_id]:
             self.policies_by_community[community_id].append(policy_id)
+        self.policy_community[policy_id] = community_id
 
         self._rebuild_community_indices(community_id)
 
+    def _new_community_id(self):
+        ids = list(self.policies_by_community)
+        if all(isinstance(c, int) for c in ids):
+            return max(ids, default=-1) + 1  # louvain numera con enteros
+        n = len(ids)
+        while f"c{n}" in self.policies_by_community:
+            n += 1
+        return f"c{n}"
+
     # suma de similitudes contra cada comunidad, gana la mayor
-    def _find_best_community_for_policy(self, policy: Policy) -> str:
+    def most_similar_community(self, policy: Policy) -> str:
         best_community = None
         best_score = -1
 
@@ -291,15 +332,17 @@ class CommunityPolicyEvaluator:
 
         removed_policy = self.policies.pop(policy_id, None)
 
-        for community_id, policy_ids in self.policies_by_community.items():
-            if policy_id in policy_ids:
-                policy_ids.remove(policy_id)
-                self._rebuild_community_indices(community_id)
-                print(f"[INFO] Política {policy_id} eliminada de comunidad {community_id}")
-                self._notify_policy_change(removed_policy)
-                return
-
-        print(f"[WARNING] Política {policy_id} no estaba asignada a ninguna comunidad")
+        community_id = self.policy_community.pop(policy_id, None)
+        released = self._release_exclusions(policy_id)
+        if community_id is not None:
+            self.policies_by_community[community_id].remove(policy_id)
+            self._rebuild_community_indices(community_id)
+            print(f"[INFO] Política {policy_id} eliminada de comunidad {community_id}")
+        else:
+            print(f"[WARNING] Política {policy_id} no estaba asignada a ninguna comunidad")
+        for comm in released - {community_id}:
+            self._rebuild_community_indices(comm)
+        self._notify_policy_change(removed_policy, None)
 
     def update_policy(self, updated_policy: Policy):
         pid = updated_policy.policy_id
@@ -318,26 +361,38 @@ class CommunityPolicyEvaluator:
         previous_policy = self.policies.get(pid)  # se guarda la version anterior para el monitor
         self.policies[pid] = updated_policy
 
-        for community_id, policy_ids in self.policies_by_community.items():
-            if pid in policy_ids:
-                self._rebuild_community_indices(community_id)
-                print(f"[INFO] Política {pid} actualizada en comunidad {community_id}")
-                self._notify_policy_change(previous_policy)
-                return
+        community_id = self.policy_community.get(pid)
+        released = self._release_exclusions(pid)
+        if community_id is not None:
+            self._rebuild_community_indices(community_id)
+            print(f"[INFO] Política {pid} actualizada en comunidad {community_id}")
+        else:
+            print(f"[WARNING] Política {pid} no estaba asignada a ninguna comunidad")
+        for comm in released - {community_id}:
+            self._rebuild_community_indices(comm)
+        self._notify_policy_change(previous_policy, updated_policy)
 
-        print(f"[WARNING] Política {pid} no estaba asignada a ninguna comunidad")
+    # al cambiar o borrar una politica, los eventos que ella cubria vuelven a los indices y los
+    # suyos dejan de estar excluidos (su contenido ya no es el que se audito).
+    # devuelve las comunidades cuyos indices hay que rehacer
+    def _release_exclusions(self, policy_id: str) -> Set[object]:
+        released = [eid for eid, pair in self.excluded.items() if policy_id in pair]
+        communities = set()
+        for eid in released:
+            owner, _ = self.excluded.pop(eid)
+            comm = self.policy_community.get(owner)
+            if comm is not None:
+                communities.add(comm)
+        return communities
 
     def move_policy_to_community(self, policy_id: str, target_community_id: str):
         if policy_id not in self.policies:
             print(f"[WARNING] Política {policy_id} no existe")
             return
 
-        source_community = None
-        for community_id, policy_ids in self.policies_by_community.items():
-            if policy_id in policy_ids:
-                source_community = community_id
-                policy_ids.remove(policy_id)
-                break
+        source_community = self.policy_community.get(policy_id)
+        if source_community is not None:
+            self.policies_by_community[source_community].remove(policy_id)
 
         if target_community_id not in self.policies_by_community:
             self.policies_by_community[target_community_id] = []
@@ -345,12 +400,15 @@ class CommunityPolicyEvaluator:
             self.events_by_comm[target_community_id] = []
 
         self.policies_by_community[target_community_id].append(policy_id)
+        self.policy_community[policy_id] = target_community_id
 
-        if source_community:
+        if source_community is not None:
             self._rebuild_community_indices(source_community)
         self._rebuild_community_indices(target_community_id)
 
         print(f"[INFO] Política {policy_id} movida de {source_community} a {target_community_id}")
+        policy = self.policies[policy_id]
+        self._notify_policy_change(policy, policy)
 
     # comunidades donde podria haber un match
     def _candidate_communities(
@@ -451,6 +509,8 @@ class CommunityPolicyEvaluator:
                     if not policy or policy.effect != "deny":
                         continue
                     for event in policy.events:
+                        if event.event_id in self.excluded:
+                            continue
                         steps += 1  # eventos comparados
                         if EventMatcher.match_event(event, request):
                             eval_time = time.time() - start
@@ -479,6 +539,8 @@ class CommunityPolicyEvaluator:
                 if already_checked_deny and policy.effect == "deny":
                     continue
                 for event in policy.events:
+                    if event.event_id in self.excluded:
+                        continue
                     steps += 1
                     if EventMatcher.match_event(event, request):
                         eval_time = time.time() - start
@@ -538,9 +600,11 @@ class CommunityPolicyEvaluator:
 
         for comm_id, events in self.events_by_comm.items():
             expected_count = sum(
-                len(self.policies[pid].events)
+                1
                 for pid in self.policies_by_community.get(comm_id, [])
                 if pid in self.policies
+                for e in self.policies[pid].events
+                if e.event_id not in self.excluded
             )
             if len(events) != expected_count:
                 issues.append(f"Comunidad {comm_id}: eventos={len(events)}, esperados={expected_count}")

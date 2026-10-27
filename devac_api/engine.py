@@ -81,7 +81,10 @@ class DevacEngine:
         self.write_lock = asyncio.Lock()  # un solo escritor; las lecturas no usan lock
         self.policy_version = 0  # escrituras de control confirmadas
         self._writing = False
-        self._background: set = set()  # eventos encolados con wait=false
+        self._background: set = set()  # eventos encolados con wait=false y reconstrucciones pendientes
+        self._rebuild_pending = False
+        # el umbral de estres no lanza su propio hilo: la reconstruccion hace fila en write_lock
+        self.monitor._trigger_rebuild = self._schedule_rebuild
 
         initial = [canonicalize_policy(p) for p in policies]
         self._ensure_unique(initial, existing={})
@@ -130,7 +133,7 @@ class DevacEngine:
             finally:
                 self._writing = False
 
-    def _on_policy_change(self, _policy: Optional[Policy]) -> None:
+    def _on_policy_change(self, _old: Optional[Policy], _new: Optional[Policy]) -> None:
         self._mutations += 1
 
     def community_map(self) -> Dict[str, str]:
@@ -197,12 +200,8 @@ class DevacEngine:
             await self.bus.publish(PoliticaEliminada(policy_id=policy_id, source="api"))
 
     def _insert(self, policy: Policy) -> None:
-        if self.evaluator.policies_by_community:
-            self.evaluator.add_policy(policy, auto_assign_community=True)
-        else:
-            self.evaluator.add_policy(policy, auto_assign_community=False)
-            # primera politica: abre la comunidad 0
-            self.evaluator.assign_policy_to_community(policy.policy_id, 0)
+        # la primera politica abre la comunidad 0
+        self.evaluator.add_policy(policy, auto_assign_community=True)
 
     @staticmethod
     def _ensure_unique(policies: List[Policy], existing: Dict[str, Policy]) -> None:
@@ -241,6 +240,30 @@ class DevacEngine:
             done = await asyncio.to_thread(self.monitor.rebuild_now)
             if not done:
                 raise RebuildInProgress("ya hay una reconstrucción en curso")
+
+    # se llama desde una escritura que dejo el estres sobre el umbral
+    def _schedule_rebuild(self) -> None:
+        if self._rebuild_pending:
+            return
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self.monitor.rebuild_now()  # nucleo usado sin loop: en el mismo hilo
+            return
+        self._rebuild_pending = True
+        task = loop.create_task(self._threshold_rebuild())
+        self._background.add(task)
+        task.add_done_callback(self._background.discard)
+
+    async def _threshold_rebuild(self) -> None:
+        try:
+            await self.rebuild()
+        except RebuildInProgress:
+            pass  # ya la hizo alguien mas
+        except Exception:
+            log.exception("Falló la reconstrucción disparada por el umbral de estrés")
+        finally:
+            self._rebuild_pending = False
 
     async def aclose(self) -> None:
         if self._background:

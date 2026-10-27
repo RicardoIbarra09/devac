@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import time
 from dataclasses import dataclass, field
 from enum import Enum
@@ -170,9 +169,18 @@ class PolicyAuditReport:
     events_compared: int = 0
     duration_seconds: float = 0.0
 
+    # event_id -> (politica del evento, politica que lo cubre); el evaluador los deja fuera de sus indices.
+    # si lo cubren varias basta con una: la relacion no tiene ciclos, asi que la cadena termina en un
+    # evento que si esta en los indices
+    def exclusions(self) -> Dict[str, Tuple[str, str]]:
+        found: Dict[str, Tuple[str, str]] = {}
+        for r in self.redundant_events:
+            found.setdefault(r.event_id, (r.policy_id, r.dominated_by_policy))
+        return found
+
     def summary(self) -> str:
         return (
-            f"{len(self.redundant_events)} eventos redundantes retirados, "
+            f"{len(self.redundant_events)} eventos redundantes excluidos de los índices, "
             f"{len(self.conflicts)} conflictos resueltos, "
             f"{len(self.reordered_communities)} comunidades reordenadas "
             f"({self.events_compared} comparaciones, {self.duration_seconds * 1000:.2f} ms)"
@@ -188,8 +196,9 @@ def audit_and_mitigate(
     start = time.perf_counter()
     report = PolicyAuditReport()
 
-    # se trabaja sobre copias
-    policies_by_id: Dict[str, Policy] = {p.policy_id: copy.deepcopy(p) for p in policies}
+    # las politicas no se modifican: un evento redundante sigue en su politica y solo se reporta,
+    # porque deja de serlo si cambia o se borra la politica que lo cubre
+    policies_by_id: Dict[str, Policy] = {p.policy_id: p for p in policies}
     weights = GraphBuilder.calculate_attribute_weights(policies)
 
     events_by_comm: Dict[str, List[Tuple[str, Event]]] = {}
@@ -269,17 +278,11 @@ def audit_and_mitigate(
             for pid2, e2 in bucket:
                 process_pair(pid_w, e_w, pid2, e2)
 
-    to_remove_by_policy: Dict[str, set] = {}
-    for pid, eid, dom_pid, dom_eid in redundant_marks:
+    for pid, eid, dom_pid, dom_eid in sorted(redundant_marks):
         report.redundant_events.append(RedundantEvent(
             policy_id=pid, event_id=eid,
             dominated_by_policy=dom_pid, dominated_by_event=dom_eid,
         ))
-        to_remove_by_policy.setdefault(pid, set()).add(eid)
-    for pid, eids in to_remove_by_policy.items():
-        policy = policies_by_id[pid]
-        # quita los redundantes
-        policy.events = [e for e in policy.events if e.event_id not in eids]
 
     policy_to_comm = {pid: comm for comm, pids in policies_by_community.items() for pid in pids}
     losers_by_comm: Dict[str, set] = {}

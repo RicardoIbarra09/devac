@@ -114,8 +114,7 @@ def test_intervalo_de_confianza():
     assert confidence_interval([5.0])["ci95"] is None
 
 
-# la auditoria borra un evento "redundante"; si luego cambia la politica que lo cubria, ese permiso se pierde
-@pytest.mark.xfail(strict=True, reason="audit_and_mitigate elimina eventos de la politica en vez de solo excluirlos del indice")
+# el evento cubierto queda fuera del indice; si cambia la politica que lo cubria, tiene que volver
 def test_auditoria_no_debe_perder_eventos():
     copia = policy("P_COPIA", events=[event("E_COPIA", subject="enfermera", action="escribir", time="08:00-20:00")])
     cambio = {"t": 0.001, "kind": "policy_update",

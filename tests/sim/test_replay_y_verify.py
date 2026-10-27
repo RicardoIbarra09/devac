@@ -47,8 +47,9 @@ def test_replay_mixto_y_verify_contra_el_oraculo(tmp_path):
     path = tmp_path / "traza.jsonl"
     write_trace(str(path), meta, records)
 
-    # sin auditoria: con ella P_TURNO pierde su evento (ver test_auditoria_no_debe_perder_eventos)
-    engine = build_engine(base, rules_module=RULES, audit=False)
+    # P_TURNO es igual a P_ENFERMERA: la auditoria excluye uno de los dos eventos
+    engine = build_engine(base, rules_module=RULES)
+    assert engine.evaluator.excluded
     transport = httpx.ASGITransport(app=create_app(engine=engine))
     items = load_workload(str(path))
     schedule = build_schedule(items, len(items), rate=0, speed=20)  # 20x para que la prueba sea corta

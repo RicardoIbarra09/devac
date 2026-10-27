@@ -83,7 +83,7 @@ def test_single_disjoint_attribute_makes_whole_events_disjoint():
     assert compare_events(e1, e2) == EventRelation.DISJOINT
 
 
-def test_redundant_policy_is_stripped_when_dominated_by_same_effect():
+def test_redundant_event_is_excluded_but_kept_in_its_policy():
     wide = _policy("P1", {"in": ["medico", "enfermero"]}, "historia", "urgencias", "*", "leer", "allow")
     narrow = _policy("P2", "medico", "historia", "urgencias", "*", "leer", "allow")
     policies = [wide, narrow] + _diversity_fillers()
@@ -92,8 +92,9 @@ def test_redundant_policy_is_stripped_when_dominated_by_same_effect():
     clean, _, report = audit_and_mitigate(policies, pbc)
 
     by_id = {p.policy_id: p for p in clean}
-    assert len(by_id["P2"].events) == 0
+    assert len(by_id["P2"].events) == 1  # la politica no se toca
     assert len(by_id["P1"].events) == 1
+    assert report.exclusions() == {"P2-e1": ("P2", "P1")}
     assert len(report.redundant_events) == 1
     assert report.redundant_events[0].policy_id == "P2"
     assert report.redundant_events[0].dominated_by_policy == "P1"
@@ -141,7 +142,8 @@ def test_wildcard_redundancy_is_found_across_different_communities():
     clean, _, report = audit_and_mitigate([wide, narrow, other], pbc)
 
     by_id = {p.policy_id: p for p in clean}
-    assert len(by_id["GUEST"].events) == 0
+    assert len(by_id["GUEST"].events) == 1
+    assert report.exclusions()["GUEST-e1"] == ("GUEST", "ADMIN")
     assert any(r.policy_id == "GUEST" and r.dominated_by_policy == "ADMIN" for r in report.redundant_events)
 
 
@@ -160,7 +162,8 @@ def test_duplicate_tiebreak_prefers_the_policy_with_reconfigure_on():
     assert len(report.redundant_events) == 1
     assert report.redundant_events[0].policy_id == "A"
     assert report.redundant_events[0].dominated_by_policy == "B"
-    assert len(by_id["A"].events) == 0
+    assert report.exclusions() == {"A-e1": ("A", "B")}
+    assert len(by_id["A"].events) == 1
     assert len(by_id["B"].events) == 1
     assert by_id["B"].reconfigure_on == ["almacen_eliminado"]
 
@@ -197,5 +200,26 @@ def test_modularity_monitor_runs_audit_during_level4_rebuild():
 
     assert monitor.last_audit_report is not None
     assert len(monitor.last_audit_report.redundant_events) == 1
-    assert len(ce.policies["P2"].events) == 0
+    assert len(ce.policies["P2"].events) == 1
+    assert "P2-e1" in ce.excluded
+    assert all(e.event_id != "P2-e1" for evs in ce.events_by_comm.values() for e in evs)  # fuera del indice
     assert ce.validate_integrity() == []
+
+
+def test_exclusion_se_libera_cuando_cambia_la_politica_que_cubre(capsys):
+    wide = _policy("P1", {"in": ["medico", "enfermero"]}, "historia", "urgencias", "*", "leer", "allow")
+    narrow = _policy("P2", "medico", "historia", "urgencias", "*", "leer", "allow")
+    policies = [wide, narrow] + _diversity_fillers()
+    gb = GraphBuilder()
+    cd = CommunityDetector()
+    ce = CommunityPolicyEvaluator([], {})
+    ce.run(policies, {})
+    monitor = ModularityMonitor(evaluator=ce, graph_builder=gb, community_detector=cd, threshold=1e9)
+    monitor.rebuild_now()
+    assert "P2-e1" in ce.excluded
+
+    ce.remove_policy("P1")
+    assert ce.excluded == {}
+    assert any(e.event_id == "P2-e1" for evs in ce.events_by_comm.values() for e in evs)
+    assert ce.validate_integrity() == []
+    capsys.readouterr()

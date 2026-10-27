@@ -1,16 +1,33 @@
 import networkx as nx
 from devac.models import Event, Policy
-from typing import List, Dict, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 from collections import Counter, defaultdict
 import numpy as np
 import time
 from pathlib import Path
+
+# la cubeta de tiempo se llama distinto que su peso
+_PREFIX_TO_WEIGHT_KEY = {
+    "rol": "rol", "recurso": "recurso", "ubicacion": "ubicacion",
+    "tiempo": "rango_horario", "accion": "accion",
+}
 
 
 class GraphBuilder:
     def __init__(self):
         self.graph = None
         self.last_stats: dict = {}  # tiempos y tamanos del ultimo build
+
+        # se conserva entre builds para los cambios en caliente (add_events / remove_events).
+        # los pesos quedan congelados hasta el siguiente build: el grafo incremental es exacto
+        # para estos pesos, pero se va separando del que daria un build con los pesos de las
+        # politicas vigentes. ese es el segundo origen de desgaste, junto con la particion
+        # que no se recalcula; los dos se corrigen en la reconstruccion
+        self.weights: Dict[str, float] = {}
+        self.similarity_threshold: float = 0.3
+        self.omitibles: Set[str] = set()
+        self._index: Dict[str, Dict[str, None]] = {}  # valor -> eventos (dict como conjunto ordenado)
+        self._nodes: Dict[str, Tuple[Event, Tuple[str, ...]]] = {}  # event_id -> evento y sus cubetas
 
     def event_similarity(self, e1: Event, e2: Event, weights: dict) -> float:
         def _eq(a, b):
@@ -27,11 +44,58 @@ class GraphBuilder:
         if _eq(e1.action.value,  e2.action.value):  score += weights.get("accion", 0)
         return score
 
+    @staticmethod
+    def _normalize(event: Event) -> None:
+        if isinstance(event.subject.value, str): event.subject.value = event.subject.value.strip().lower()
+        if isinstance(event.asset.value,   str): event.asset.value   = event.asset.value.strip().lower()
+        if isinstance(event.space.value,   str): event.space.value   = event.space.value.strip().lower()
+        if isinstance(event.time.value,    str): event.time.value    = event.time.value.strip().lower()
+        if isinstance(event.action.value,  str): event.action.value  = event.action.value.strip().lower()
+
+    @staticmethod
+    def _node_attrs(event: Event, policy_id: str) -> dict:
+        def _gephi(v):
+            return str(v) if isinstance(v, dict) else v
+
+        return dict(
+            policy_id     = policy_id,
+            rol           = _gephi(event.subject.value),
+            recurso       = _gephi(event.asset.value),
+            ubicacion     = _gephi(event.space.value),
+            rango_horario = _gephi(event.time.value),
+            accion        = _gephi(event.action.value),
+        )
+
+    # atributos que aunque coincidan nunca alcanzan el umbral
+    @staticmethod
+    def _omitibles_for(weights: Dict[str, float], similarity_threshold: float) -> Set[str]:
+        omitibles = set()
+        suma = 0.0
+        for attr, peso in sorted(weights.items(), key=lambda kv: kv[1]):
+            if suma + peso < similarity_threshold:
+                suma += peso
+                omitibles.add(attr)
+        return omitibles
+
+    @staticmethod
+    def _index_keys(event: Event, omitibles: Set[str]) -> Tuple[str, ...]:
+        keys = []
+        for prefix, val in (("rol", event.subject.value), ("recurso", event.asset.value),
+                            ("ubicacion", event.space.value), ("tiempo", event.time.value),
+                            ("accion", event.action.value)):
+            # no vale la pena indexarlo
+            if _PREFIX_TO_WEIGHT_KEY[prefix] in omitibles:
+                continue
+            if isinstance(val, str):
+                keys.append(f"{prefix}:{val}")
+        return tuple(keys)
+
+    # weights: pesos ya calculados (p. ej. los congelados); si no, se calculan por entropia
     def build_event_graph(self, policies: List[Policy], similarity_threshold: float = 0.3,
-                          export: bool = True) -> nx.Graph:
+                          export: bool = True, weights: Optional[Dict[str, float]] = None) -> nx.Graph:
         G = nx.Graph()
         t0 = time.perf_counter()
-        attribute_weights = self.calculate_attribute_weights(policies)  # pesos por entropia
+        attribute_weights = dict(weights) if weights is not None else self.calculate_attribute_weights(policies)
         t_weights = time.perf_counter() - t0
 
         t0 = time.perf_counter()
@@ -39,69 +103,31 @@ class GraphBuilder:
 
         for policy in policies:
             for event in policy.events:
-                if isinstance(event.subject.value, str): event.subject.value = event.subject.value.strip().lower()
-                if isinstance(event.asset.value,   str): event.asset.value   = event.asset.value.strip().lower()
-                if isinstance(event.space.value,   str): event.space.value   = event.space.value.strip().lower()
-                if isinstance(event.time.value,    str): event.time.value    = event.time.value.strip().lower()
-                if isinstance(event.action.value,  str): event.action.value  = event.action.value.strip().lower()
-
+                self._normalize(event)
                 all_events_map[event.event_id] = {"obj": event, "policy_id": policy.policy_id}
-
-                def _gephi(v):
-                    return str(v) if isinstance(v, dict) else v
-
-                # un nodo por evento
-                G.add_node(
-                    event.event_id,
-                    policy_id     = policy.policy_id,
-                    rol           = _gephi(event.subject.value),
-                    recurso       = _gephi(event.asset.value),
-                    ubicacion     = _gephi(event.space.value),
-                    rango_horario = _gephi(event.time.value),
-                    accion        = _gephi(event.action.value),
-                )
+                G.add_node(event.event_id, **self._node_attrs(event, policy.policy_id))  # un nodo por evento
         t_nodes = time.perf_counter() - t0
 
         t0 = time.perf_counter()
-        # atributos que aunque coincidan nunca alcanzan el umbral
-        omitibles = set()
-        suma = 0.0
-        for attr, peso in sorted(attribute_weights.items(), key=lambda kv: kv[1]):
-            if suma + peso < similarity_threshold:
-                suma += peso
-                omitibles.add(attr)
+        omitibles = self._omitibles_for(attribute_weights, similarity_threshold)
 
-        # la cubeta de tiempo se llama distinto que su peso
-        _PREFIX_TO_WEIGHT_KEY = {
-            "rol": "rol", "recurso": "recurso", "ubicacion": "ubicacion",
-            "tiempo": "rango_horario", "accion": "accion",
-        }
-
-        inverted_index = defaultdict(list)  # valor -> eventos que lo usan
+        inverted_index: Dict[str, Dict[str, None]] = defaultdict(dict)  # valor -> eventos que lo usan
+        event_keys: Dict[str, Tuple[str, ...]] = {}
         for ev_id, data in all_events_map.items():
-            ev = data["obj"]
-
-            def _idx_val(prefix, val):
-                # no vale la pena indexarlo
-                if _PREFIX_TO_WEIGHT_KEY[prefix] in omitibles:
-                    return
-                if isinstance(val, str):
-                    inverted_index[f"{prefix}:{val}"].append(ev_id)
-
-            _idx_val("rol",       ev.subject.value)
-            _idx_val("recurso",   ev.asset.value)
-            _idx_val("ubicacion", ev.space.value)
-            _idx_val("tiempo",    ev.time.value)
-            _idx_val("accion",    ev.action.value)
+            keys = self._index_keys(data["obj"], omitibles)
+            event_keys[ev_id] = keys
+            for key in keys:
+                inverted_index[key][ev_id] = None
         t_index = time.perf_counter() - t0
 
         t0 = time.perf_counter()
         processed_pairs: Set[Tuple[str, str]] = set()  # para no comparar dos veces el mismo par
 
         # solo se comparan eventos de la misma cubeta
-        for key, event_ids_in_bucket in inverted_index.items():
-            if len(event_ids_in_bucket) < 2:
+        for key, bucket in inverted_index.items():
+            if len(bucket) < 2:
                 continue
+            event_ids_in_bucket = list(bucket)
             for i in range(len(event_ids_in_bucket)):
                 for j in range(i + 1, len(event_ids_in_bucket)):
                     id_a = event_ids_in_bucket[i]
@@ -136,9 +162,67 @@ class GraphBuilder:
         }
 
         self.graph = G
+        self.weights = attribute_weights
+        self.similarity_threshold = similarity_threshold
+        self.omitibles = omitibles
+        self._index = dict(inverted_index)
+        self._nodes = {ev_id: (data["obj"], event_keys[ev_id]) for ev_id, data in all_events_map.items()}
         if export:
             self.export_graph("exports/event_graph.gexf")  # para abrirlo en gephi
         return self.graph
+
+    # eventos ya en el grafo que pasarian el umbral con este; no modifica nada
+    def similar_events(self, event: Event) -> Dict[str, float]:
+        self._normalize(event)
+        found: Dict[str, float] = {}
+        seen = {event.event_id}
+        for key in self._index_keys(event, self.omitibles):
+            for other_id in self._index.get(key, ()):
+                if other_id in seen:
+                    continue
+                seen.add(other_id)  # mismo par en varias cubetas: se compara una vez
+                sim = self.event_similarity(event, self._nodes[other_id][0], self.weights)
+                if sim >= self.similarity_threshold:
+                    found[other_id] = float(sim)
+        return found
+
+    # mismos nodos y aristas que daria build_event_graph con los pesos congelados
+    def add_events(self, policy: Policy) -> List[str]:
+        if self.graph is None:
+            self.graph = nx.Graph()
+        added = []
+        for event in policy.events:
+            if event.event_id in self._nodes:
+                raise ValueError(f"el evento {event.event_id} ya esta en el grafo")
+            neighbors = self.similar_events(event)
+            keys = self._index_keys(event, self.omitibles)
+            self.graph.add_node(event.event_id, **self._node_attrs(event, policy.policy_id))
+            for other_id, sim in neighbors.items():
+                self.graph.add_edge(event.event_id, other_id, weight=sim)
+            for key in keys:
+                self._index.setdefault(key, {})[event.event_id] = None
+            self._nodes[event.event_id] = (event, keys)
+            added.append(event.event_id)
+        return added
+
+    def remove_events(self, event_ids: Iterable[str]) -> List[str]:
+        removed = []
+        for event_id in event_ids:
+            entry = self._nodes.pop(event_id, None)
+            if entry is None:
+                continue
+            # se usan las cubetas guardadas, por si el evento cambio despues de insertarse
+            for key in entry[1]:
+                bucket = self._index[key]
+                bucket.pop(event_id, None)
+                if not bucket:
+                    del self._index[key]
+            self.graph.remove_node(event_id)
+            removed.append(event_id)
+        return removed
+
+    def __contains__(self, event_id: str) -> bool:
+        return event_id in self._nodes
 
     @staticmethod
     def calculate_attribute_weights(policies: List[Policy]) -> dict:
