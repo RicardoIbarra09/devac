@@ -3,12 +3,14 @@ from devac.models import Event, Policy
 from typing import List, Dict, Set, Tuple
 from collections import Counter, defaultdict
 import numpy as np
+import time
 from pathlib import Path
 
 
 class GraphBuilder:
     def __init__(self):
         self.graph = None
+        self.last_stats: dict = {}  # tiempos y tamanos del ultimo build
 
     def event_similarity(self, e1: Event, e2: Event, weights: dict) -> float:
         def _eq(a, b):
@@ -25,18 +27,14 @@ class GraphBuilder:
         if _eq(e1.action.value,  e2.action.value):  score += weights.get("accion", 0)
         return score
 
-    def build_event_graph(self, policies: List[Policy], similarity_threshold: float = 0.3) -> nx.Graph:
+    def build_event_graph(self, policies: List[Policy], similarity_threshold: float = 0.3,
+                          export: bool = True) -> nx.Graph:
         G = nx.Graph()
+        t0 = time.perf_counter()
         attribute_weights = self.calculate_attribute_weights(policies)  # pesos por entropia
+        t_weights = time.perf_counter() - t0
 
-        # atributos que aunque coincidan nunca alcanzan el umbral
-        omitibles = set()
-        suma = 0.0
-        for attr, peso in sorted(attribute_weights.items(), key=lambda kv: kv[1]):
-            if suma + peso < similarity_threshold:
-                suma += peso
-                omitibles.add(attr)
-
+        t0 = time.perf_counter()
         all_events_map = {}  # event_id -> evento y su politica
 
         for policy in policies:
@@ -62,6 +60,16 @@ class GraphBuilder:
                     rango_horario = _gephi(event.time.value),
                     accion        = _gephi(event.action.value),
                 )
+        t_nodes = time.perf_counter() - t0
+
+        t0 = time.perf_counter()
+        # atributos que aunque coincidan nunca alcanzan el umbral
+        omitibles = set()
+        suma = 0.0
+        for attr, peso in sorted(attribute_weights.items(), key=lambda kv: kv[1]):
+            if suma + peso < similarity_threshold:
+                suma += peso
+                omitibles.add(attr)
 
         # la cubeta de tiempo se llama distinto que su peso
         _PREFIX_TO_WEIGHT_KEY = {
@@ -85,7 +93,9 @@ class GraphBuilder:
             _idx_val("ubicacion", ev.space.value)
             _idx_val("tiempo",    ev.time.value)
             _idx_val("accion",    ev.action.value)
+        t_index = time.perf_counter() - t0
 
+        t0 = time.perf_counter()
         processed_pairs: Set[Tuple[str, str]] = set()  # para no comparar dos veces el mismo par
 
         # solo se comparan eventos de la misma cubeta
@@ -106,9 +116,28 @@ class GraphBuilder:
                     # arista si son suficientemente parecidos
                     if sim >= similarity_threshold:
                         G.add_edge(id_a, id_b, weight=float(sim))
+        t_pairs = time.perf_counter() - t0
+
+        n = G.number_of_nodes()
+        bucket_sizes = [len(ids) for ids in inverted_index.values() if len(ids) >= 2]
+        self.last_stats = {
+            "t_weights_s": t_weights,
+            "t_nodes_s": t_nodes,
+            "t_index_s": t_index,
+            "t_pairs_s": t_pairs,
+            "t_total_s": t_weights + t_nodes + t_index + t_pairs,  # sin la exportacion
+            "nodes": n,
+            "edges": G.number_of_edges(),
+            "pairs_compared": len(processed_pairs),
+            "pairs_total": n * (n - 1) // 2,
+            "buckets": len(bucket_sizes),
+            "max_bucket": max(bucket_sizes, default=0),
+            "omitibles": sorted(omitibles),
+        }
 
         self.graph = G
-        self.export_graph("exports/event_graph.gexf")  # para abrirlo en gephi
+        if export:
+            self.export_graph("exports/event_graph.gexf")  # para abrirlo en gephi
         return self.graph
 
     @staticmethod
