@@ -248,13 +248,15 @@ def run_one(workload, policies_path, seed, n_requests, audit_on):
 
     audit = None
     audit_s = 0.0
+    excluded = {}
     if audit_on:
         t0 = time.perf_counter()
         pols, pbc, audit = audit_and_mitigate(pols, pbc)
+        excluded = audit.exclusions()  # la auditoria ya no borra eventos: el evaluador los deja fuera
         audit_s = time.perf_counter() - t0
 
     devac = CommunityPolicyEvaluator()
-    devac.run(pols, pbc)
+    devac.run(pols, pbc, excluded)
     linear = TraditionalPolicyEvaluator(copy.deepcopy(pols))
 
     ref_compiled = compile_policies(base)  # el oraculo usa las politicas originales, sin auditar
@@ -275,7 +277,9 @@ def run_one(workload, policies_path, seed, n_requests, audit_on):
 
     preserved = float("nan")
     if audit_on:
-        clean_compiled = compile_policies(pols)
+        # lo que de verdad usa el evaluador: cada politica sin sus eventos excluidos
+        used = [p.model_copy(update={"events": [e for e in p.events if e.event_id not in excluded]}) for p in pols]
+        clean_compiled = compile_policies(used)
         # la auditoria no debe cambiar ninguna decision
         preserved = agreement(truth, [oracle_decision(clean_compiled, r)[0] for r in requests])
 
@@ -306,6 +310,7 @@ def run_one(workload, policies_path, seed, n_requests, audit_on):
         "recall": round(recall, 6) if not math.isnan(recall) else "",
         "f1": round(f1, 6) if not math.isnan(f1) else "",
         "redundant_events": len(audit.redundant_events) if audit else "",
+        "excluded_events": len(excluded) if audit else "",
         "conflicts": len(audit.conflicts) if audit else "",
         "reordered_communities": len(audit.reordered_communities) if audit else "",
         "events_compared": audit.events_compared if audit else "",
