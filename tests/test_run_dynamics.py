@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from devac.loader import PolicyLoader
-from experiments.run_dynamics import build_plan, main
+from paper1_dinamica.run_dynamics import build_plan, main, networkx_changes
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICIES = "experiments/nimbuslab_policies.json"
@@ -55,33 +55,51 @@ def _without_times(rows):
     return [{k: v for k, v in row.items() if k not in TIMES} for row in rows]
 
 
-# dos tareas de slurm (--rep) juntadas por resumen_e4 dan lo mismo que una corrida con --reps 2
-def test_repeticiones_sueltas_y_resumen_e4(tmp_path, capsys):
-    import importlib.util
+# dos tareas de slurm (--rep) leidas con datos.load_runs dan lo mismo que una corrida con --reps 2
+def test_repeticiones_sueltas_igual_a_corrida_completa(tmp_path, capsys):
+    from paper1_dinamica.datos import load_runs
 
     common = ["--policies", POLICIES, "--scenario", "deactivation", "--changes", "30", "--stress-threshold", "0.02"]
     assert main(common + ["--reps", "2", "--out-dir", str(tmp_path / "junta")]) == 0
     for rep in ("1", "2"):
         assert main(common + ["--rep", rep, "--out-dir", str(tmp_path / "suelta")]) == 0
 
-    spec = importlib.util.spec_from_file_location("resumen_e4", ROOT / "clusterExperimentos/E4/resumen_e4.py")
-    resumen = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(resumen)
-    [(config, merged)] = resumen.merge(tmp_path / "suelta")
-    whole = json.loads((tmp_path / "junta" / "deactivation_rebuild_meta.json").read_text())
+    [(config, loose)] = load_runs(tmp_path / "suelta").items()
+    whole = load_runs(tmp_path / "junta")["deactivation_rebuild"]
+    assert config == "deactivation_rebuild" and len(loose["metas"]) == 2
+    for a, b in zip(whole["reps"], loose["reps"]):
+        assert a["file"] == b["file"] and _without_times(a["rows"]) == _without_times(b["rows"])
+        assert a["summary"]["plan_seed"] == b["summary"]["plan_seed"]
+        assert a["summary"]["louvain_seed"] == b["summary"]["louvain_seed"]
+    capsys.readouterr()
 
-    assert config == "deactivation_rebuild" and merged["files"] == whole["files"]
-    for name in whole["files"]:
-        a = json.loads((tmp_path / "junta" / name).read_text())
-        b = json.loads((tmp_path / "suelta" / name).read_text())
-        assert _without_times(a) == _without_times(b)
-    assert [r["louvain_seed"] for r in merged["replications"]] == [r["louvain_seed"] for r in whole["replications"]]
-    assert [r["rebuilds"] for r in merged["replications"]] == [r["rebuilds"] for r in whole["replications"]]
 
-    # y make_charts lee lo que quedo junto
-    spec = importlib.util.spec_from_file_location("make_charts", ROOT / "graficas/make_charts.py")
-    charts = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(charts)
-    charts.main(["--data-dir", str(tmp_path / "suelta"), "--out-dir", str(tmp_path / "figuras")])
-    assert (tmp_path / "figuras" / "fig_trayectoria_estres.png").exists()
+# cada repeticion tiene su propia secuencia de cambios y su semilla de louvain, y quedan en el meta
+def test_cada_repeticion_usa_otra_secuencia(tmp_path, capsys):
+    args = ["--policies", POLICIES, "--scenario", "deactivation", "--changes", "20", "--reps", "2",
+            "--stress-threshold", "1e9", "--out-dir", str(tmp_path)]
+    assert main(args) == 0
+    meta = json.loads((tmp_path / "deactivation_norebuild_meta.json").read_text())
+    assert meta["plan_seeds"] == [1001, 1002] and meta["louvain_seeds"] == [1001, 1002]
+    assert [r["plan_seed"] for r in meta["replications"]] == [1001, 1002]
+    first, second = (json.loads((tmp_path / name).read_text()) for name in meta["files"])
+    assert [r["policy_id"] for r in first] != [r["policy_id"] for r in second]
+    assert {"commit", "dirty", "node", "cpu", "pip_freeze", "timing"} <= set(meta)
+    assert meta["timing"] == "timing_not_reported"  # sin TIMING=1
+    capsys.readouterr()
+
+
+def test_muestra_de_q_completa(tmp_path, capsys):
+    assert networkx_changes(10, None) == set(range(1, 11))
+    assert networkx_changes(10, 0) == set()
+    assert networkx_changes(100, 5) == {1, 21, 41, 61, 81}
+    args = ["--policies", POLICIES, "--scenario", "mixed", "--changes", "30", "--rep", "1",
+            "--networkx-sample", "4", "--out-dir", str(tmp_path)]
+    assert main(args) == 0
+    rows = json.loads((tmp_path / "mixed_rebuild_r01.json").read_text())
+    measured = [r for r in rows if r["q_networkx"] is not None]
+    assert len(measured) == 4 and all(r["t_networkx_s"] is not None for r in measured)
+    meta = json.loads((tmp_path / "mixed_rebuild_r01_meta.json").read_text())
+    assert meta["networkx_sample"]["changes_measured"] == 4
+    assert meta["replications"][0]["networkx_changes"] == 4
     capsys.readouterr()

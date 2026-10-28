@@ -4,3 +4,10 @@ __pycache__/
 .pytest_cache/
 exports/
 *.egg-info/
+
+# salidas de slurm (--output/--error de los sbatch y slurm-<job>.out por defecto)
+*.out
+*.err
+
+# resultados crudos de los experimentos (filas por cambio y meta.json por repeticion)
+paper1_dinamica/resultados/crudo/
