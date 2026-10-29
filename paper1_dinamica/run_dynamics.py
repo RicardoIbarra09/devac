@@ -3,6 +3,7 @@
 #   poetry run python paper1_dinamica/run_dynamics.py --scenario deactivation --reps 10 --stress-threshold 1e9
 #   poetry run python paper1_dinamica/run_dynamics.py --scenario mixed --changes 821 --reps 10
 #   python3 paper1_dinamica/run_dynamics.py --scenario mixed --rep 3   (una sola repeticion, p. ej. una tarea de slurm)
+#   python3 paper1_dinamica/run_dynamics.py --scenario mixed --stress-threshold 1e9 --rebuild-every 50   (periodica)
 #
 # la repeticion r usa la semilla seed*1000 + r para su secuencia de cambios y para louvain; las dos
 # quedan en el meta.json. con y sin reconstrucciones, la misma r aplica los mismos cambios.
@@ -16,6 +17,7 @@ import hashlib
 import io
 import json
 import random
+import resource
 import statistics
 import sys
 import time
@@ -166,6 +168,8 @@ def run_once(policies: List[dict], plan: List[dict], args, louvain_seed: int,
     monitor._trigger_rebuild = timed_rebuild  # en el mismo hilo, si no la corrida no se repite igual
 
     verify = networkx_changes(len(plan), getattr(args, "networkx_sample", None))
+    every = getattr(args, "rebuild_every", None)
+    final = None
     rows = []
     with contextlib.redirect_stdout(io.StringIO()):  # el evaluador imprime cada cambio
         timed_rebuild()  # build inicial
@@ -175,6 +179,10 @@ def run_once(policies: List[dict], plan: List[dict], args, louvain_seed: int,
             apply_change(evaluator, change)
             if len(monitor.history) != before + 1:
                 raise RuntimeError(f"el cambio {i} ({change['change']}) no dejó exactamente una fila")
+            # periodica: igual que la de estres, despues del cambio y con la fila ya escrita, asi que
+            # q_incremental es la de antes de reconstruir en las dos reglas
+            if every and i % every == 0:
+                timed_rebuild()
             row = dict(monitor.history[-1])
             row["change"] = change["change"]
             row["rebuilds"] = monitor.get_stats()["rebuilds"] - 1  # sin contar el build inicial
@@ -183,6 +191,10 @@ def run_once(policies: List[dict], plan: List[dict], args, louvain_seed: int,
             rows.append(row)
             if after_change is not None:
                 after_change(i, row, monitor)
+        if getattr(args, "final_rebuild", False):
+            # una reconstruccion mas sobre la red ya modificada, solo para medirla (D2); no cuenta en rebuilds
+            timed_rebuild()
+            final = {"s": rebuild_times.pop(), **rebuild_phases.pop()}
 
     graph = builder.graph
     return {
@@ -191,6 +203,7 @@ def run_once(policies: List[dict], plan: List[dict], args, louvain_seed: int,
         "initial_build_s": rebuild_times[0],
         "rebuild_s": rebuild_times[1:],
         "rebuild_phases": rebuild_phases,  # el primero es el build inicial
+        "final_rebuild": final,
         "final_nodes": graph.number_of_nodes(),
         "final_edges": graph.number_of_edges(),
         "final_communities": len(evaluator.policies_by_community),
@@ -211,6 +224,7 @@ def summarize(run: dict) -> dict:
         "rebuilds": rows[-1]["rebuilds"] if rows else 0,
         "max_stress_q": max((r["stress_q"] for r in rows), default=0.0),
         "mean_q": _mean([r["q_incremental"] for r in rows]),
+        "min_q": min((r["q_incremental"] for r in rows), default=None),
         "networkx_changes": len(checked),
         "max_abs_q_diff": max((abs(r["q_incremental"] - r["q_networkx"]) for r in checked), default=None),
         "mean_t_networkx_s": _mean([r["t_networkx_s"] for r in rows]),
@@ -223,6 +237,9 @@ def summarize(run: dict) -> dict:
         "total_update_s": sum(r["t_graph_s"] + r["t_incremental_s"] for r in rows),
         # tamano de los grafos reconstruidos (nodos + aristas), no depende de la maquina
         "rebuilt_size": sum(ph["nodes"] + ph["edges"] for ph in run["rebuild_phases"][1:]),
+        "rebuild_sizes": [ph["nodes"] + ph["edges"] for ph in run["rebuild_phases"][1:]],
+        # tamano medio del grafo despues de cada cambio; con los tiempos de D2 da el costo de los cambios
+        "mean_size": _mean([r["nodes"] + r["edges"] for r in rows]),
         # segunda pasada: grafo sin excluidos + louvain sobre el; incluye el build inicial
         "mean_second_pass_s": _mean([ph["t_build_used_s"] + ph["t_louvain_used_s"] for ph in run["rebuild_phases"]]),
         "mean_rebuild_phases_s": {
@@ -235,6 +252,8 @@ def summarize(run: dict) -> dict:
         "final_nodes": run["final_nodes"],
         "final_edges": run["final_edges"],
         "final_communities": run["final_communities"],
+        # --final-rebuild: tiempo, fases y tamano de esa reconstruccion (None sin la opcion)
+        "final_rebuild": run.get("final_rebuild"),
     }
 
 
@@ -251,6 +270,10 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--changes", type=int, help="por defecto 1000 (deactivation) u 821 (mixed)")
     ap.add_argument("--stress-threshold", type=float, default=0.05,
                     help="un valor muy alto (p. ej. 1e9) da la corrida sin reconstrucciones")
+    ap.add_argument("--rebuild-every", type=int,
+                    help="reconstruye cada k cambios (regla periodica); con --stress-threshold 1e9 es la unica")
+    ap.add_argument("--final-rebuild", action="store_true",
+                    help="al terminar, mide una reconstruccion completa mas (no cuenta en rebuilds)")
     ap.add_argument("--similarity-threshold", type=float, default=0.3)
     ap.add_argument("--no-audit", action="store_true")
     ap.add_argument("--seed", type=int, default=1,
@@ -261,7 +284,7 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--networkx-sample", type=int,
                     help="calcula la Q completa solo en n cambios repartidos parejo (0 = en ninguno); "
                          "por defecto en todos")
-    ap.add_argument("--tag", help="por defecto rebuild o norebuild según el umbral")
+    ap.add_argument("--tag", help="por defecto rebuild o norebuild según el umbral, o every<k>")
     ap.add_argument("--out-dir", default="paper1_dinamica/resultados/crudo/local")
     return ap
 
@@ -273,6 +296,8 @@ def check_args(ap: argparse.ArgumentParser, args) -> None:
         ap.error("--rep debe ser al menos 1")
     if args.networkx_sample is not None and args.networkx_sample < 0:
         ap.error("--networkx-sample no puede ser negativo")
+    if args.rebuild_every is not None and args.rebuild_every < 1:
+        ap.error("--rebuild-every debe ser al menos 1")
 
 
 def load_policies(path: str) -> List[dict]:
@@ -295,6 +320,8 @@ def base_meta(args, started: datetime, env: dict) -> dict:
         **env,
         "networkx": nx.__version__,
         "timing_columns": TIMING_COLUMNS,
+        # pico de memoria del proceso (linux da kB); el cluster no tiene accounting, sacct no lo da
+        "max_rss_mb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024,
     }
 
 
@@ -304,12 +331,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     check_args(ap, args)
     reps = [args.rep] if args.rep is not None else list(range(1, args.reps + 1))
     changes = args.changes or DEFAULT_CHANGES[args.scenario]
-    tag = args.tag or ("norebuild" if args.stress_threshold >= 1e6 else "rebuild")
+    tag = args.tag or (f"every{args.rebuild_every}" if args.rebuild_every
+                       else "norebuild" if args.stress_threshold >= 1e6 else "rebuild")
     out_dir = ROOT / args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
     policies = load_policies(args.policies)
     # flush: con la salida redirigida a un log, sin esto no se ve el avance hasta el final
-    print(f"{args.scenario}: {changes} cambios, umbral {args.stress_threshold}, repeticiones {reps}", flush=True)
+    every = f", cada {args.rebuild_every} cambios" if args.rebuild_every else ""
+    print(f"{args.scenario}: {changes} cambios, umbral {args.stress_threshold}{every}, repeticiones {reps}",
+          flush=True)
 
     started = datetime.now(timezone.utc)
     env = environment()  # al arrancar: el commit con el que corre el codigo
@@ -343,12 +373,13 @@ def main(argv: Optional[List[str]] = None) -> int:
                      "repartidos parejo; en los demas q_networkx y t_networkx_s son null"),
         },
         "columns": {
-            "q_incremental": "Q incremental (la que mueve el estrés); q_real es la misma",
+            "q_incremental": "Q incremental (la que mueve el estrés); q_real es la misma. en un cambio que "
+                             "reconstruye es la Q de antes de reconstruir",
             "q_networkx": "Q completa con networkx sobre el mismo grafo, solo para verificar (null si no se midio)",
             "t_networkx_s": "tiempo de la Q completa; t_real_s es el mismo",
             "t_incremental_s": "tiempo de actualizar L_c, D_c y m con los vecinos de los nodos que cambiaron",
             "t_graph_s": "tiempo de actualizar nodos y aristas; lo necesitan la Q completa y la incremental",
-            "rebuilds": "reconstrucciones hechas hasta este cambio, inclusive",
+            "rebuilds": "reconstrucciones hechas hasta este cambio, inclusive (por estres o periodicas)",
             "change": "cambio aplicado: add, update, remove, deactivate o reactivate",
             "nodes, edges": "tamano del grafo despues del cambio",
         },

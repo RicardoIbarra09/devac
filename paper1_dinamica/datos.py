@@ -19,7 +19,7 @@ META = re.compile(r"^(?P<config>.+?)(_r(?P<rep>\d+))?_meta\.json$")
 # deben coincidir entre repeticiones para poder juntarlas
 SAME = ("script", "commit", "dirty", "policies_sha256", "timing")
 SAME_PARAMS = ("policies", "scenario", "changes", "stress_threshold", "similarity_threshold", "no_audit",
-               "seed", "tag", "networkx_sample")
+               "seed", "tag", "networkx_sample", "rebuild_every", "final_rebuild")
 
 
 def _read(path: Path):
@@ -121,3 +121,48 @@ def ci95(values) -> float:
     df = len(values) - 1
     t = T95.get(df) or T95[max(k for k in T95 if k <= df)]
     return t * statistics.stdev(values) / math.sqrt(len(values))
+
+
+# ajuste t = c * x^b por minimos cuadrados en log-log; None si no hay dos puntos distintos
+def fit_power(points):
+    pts = [(math.log(x), math.log(y)) for x, y in points if x and y and x > 0 and y > 0]
+    if len({x for x, _ in pts}) < 2:
+        return None
+    mx, my = statistics.fmean(x for x, _ in pts), statistics.fmean(y for _, y in pts)
+    b = sum((x - mx) * (y - my) for x, y in pts) / sum((x - mx) ** 2 for x, _ in pts)
+    return math.exp(my - b * mx), b
+
+
+def _num(value):
+    return float(value) if value not in (None, "") else None
+
+
+# modelo de costo con los tiempos de D2 (node422): una reconstruccion completa segun los nodos + aristas
+# del grafo reconstruido, y un cambio incremental (grafo + Q) segun el tamano medio del grafo.
+# lo usan resumen_d5.py y make_figures.py; None si todavia no hay resultados/d2_escalamiento.csv
+def cost_model(d2_csv: Path = RESULTS / "d2_escalamiento.csv") -> Optional[dict]:
+    if not Path(d2_csv).is_file():
+        return None
+    with open(d2_csv, newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    rebuild, update = [], []
+    for r in rows:
+        # el build inicial es el mismo camino que una reconstruccion
+        rebuild.append((_num(r["initial_nodes"]) + _num(r["initial_edges"]), _num(r["initial_build_s"])))
+        if _num(r.get("rebuild_s")) is not None:
+            rebuild.append((_num(r["rebuild_nodes"]) + _num(r["rebuild_edges"]), _num(r["rebuild_s"])))
+        if _num(r.get("mean_size")) is not None:
+            update.append((_num(r["mean_size"]), _num(r["mean_t_graph_s"]) + _num(r["mean_t_incremental_s"])))
+    model = {"rebuild": fit_power(rebuild), "update": fit_power(update), "source": str(d2_csv),
+             "timing": sorted({r["timing"] for r in rows}),
+             "sizes": (min(x for x, _ in rebuild), max(x for x, _ in rebuild)) if rebuild else None}
+    if model["rebuild"] is None or model["update"] is None:
+        return None
+    return model
+
+
+def estimate_cost(model: dict, rebuild_sizes: List[float], changes: int, mean_size: float) -> dict:
+    (cr, br), (cu, bu) = model["rebuild"], model["update"]
+    rebuild = sum(cr * x ** br for x in rebuild_sizes)
+    update = changes * cu * mean_size ** bu
+    return {"est_rebuild_s": rebuild, "est_update_s": update, "est_cost_s": rebuild + update}
