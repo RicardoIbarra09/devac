@@ -102,6 +102,8 @@ class GraphBuilder:
         all_events_map = {}  # event_id -> evento y su politica
 
         for policy in policies:
+            if not policy.active:
+                continue  # sus eventos no entran al grafo hasta que se active
             for event in policy.events:
                 self._normalize(event)
                 all_events_map[event.event_id] = {"obj": event, "policy_id": policy.policy_id}
@@ -236,6 +238,8 @@ class GraphBuilder:
             return v.strip().lower() if isinstance(v, str) else "__complex__"
 
         for policy in policies:
+            if not policy.active:
+                continue
             for event in policy.events:
                 attribute_values["rol"].append(_str(event.subject.value))
                 attribute_values["recurso"].append(_str(event.asset.value))

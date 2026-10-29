@@ -154,7 +154,7 @@ class DevacEngine:
         report = self.monitor.last_audit_report
         return {
             "policies": len(policies),
-            "active_policies": sum(1 for p in policies.values() if p.events),
+            "active_policies": sum(1 for p in policies.values() if p.active and p.events),
             "communities": len(self.evaluator.policies_by_community),
             "events": sum(len(evs) for evs in self.evaluator.events_by_comm.values()),
             "reconfigurations_applied": len(self.reconfigurator.log),
@@ -182,15 +182,24 @@ class DevacEngine:
             others = {pid: p for pid, p in self.evaluator.policies.items() if pid != policy.policy_id}
             self._ensure_unique([policy], existing=others)
 
-            # politica activa: hot-swap normal
-            if policy.policy_id in self.community_map():
-                self.evaluator.update_policy(policy)
-            else:
-                # estaba inactiva, se vuelve a insertar
-                self.evaluator.policies.pop(policy.policy_id)
-                self._insert(policy)
+            # hot-swap; si estaba sin comunidad y ahora se usa, el evaluador le busca una
+            self.evaluator.update_policy(policy)
             await self.bus.publish(PoliticaActualizada(policy_id=policy.policy_id, source="api"))
         return self.evaluator.policies[policy.policy_id]
+
+    # activar o desactivar sin reenviar la politica: conserva sus eventos
+    async def set_policy_active(self, policy_id: str, active: bool) -> Policy:
+        async with self._control_write():
+            policy = self.evaluator.policies.get(policy_id)
+            if policy is None:
+                raise PolicyNotFound(policy_id)
+            if policy.active != active:
+                if active:
+                    self.evaluator.activate_policy(policy_id)
+                else:
+                    self.evaluator.deactivate_policy(policy_id)
+                await self.bus.publish(PoliticaActualizada(policy_id=policy_id, source="api"))
+        return self.evaluator.policies[policy_id]
 
     async def delete_policy(self, policy_id: str) -> None:
         async with self._control_write():

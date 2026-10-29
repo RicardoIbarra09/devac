@@ -41,6 +41,7 @@ def policy_from_dto(dto: PolicyIn) -> Policy:
         effect=dto.effect,
         reconfigure_on=dto.reconfigure_on,
         on_deny=dto.on_deny,
+        active=True if dto.active is None else dto.active,
     )
 
 
@@ -59,6 +60,7 @@ def policy_to_dto(policy: Policy, community: Optional[str]) -> PolicyOut:
         ],
         reconfigure_on=list(policy.reconfigure_on),
         on_deny=policy.on_deny,
+        active=policy.active,
         community=community,
     )
 
@@ -68,5 +70,6 @@ def policy_summary(policy: Policy, community: Optional[str]) -> PolicySummary:
         policy_id=policy.policy_id,
         effect=policy.effect,
         n_events=len(policy.events),
+        active=policy.active,
         community=community,
     )

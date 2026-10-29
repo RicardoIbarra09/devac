@@ -74,10 +74,12 @@ class ModularityMonitor:
         with self.lock:
             policy = new if new is not None else old
             builder = self.graph_builder
-            leaving = [e.event_id for e in old.events] if old is not None else []
-            if new is not None:
-                # un event_id repetido en otra politica reemplaza al nodo anterior
-                leaving += [e.event_id for e in new.events if e.event_id in builder]
+            # una politica inactiva conserva sus eventos, pero no tiene nodos
+            old_events = old.events if old is not None and old.active else []
+            new_events = new.events if new is not None and new.active else []
+            leaving = [e.event_id for e in old_events]
+            # un event_id repetido en otra politica reemplaza al nodo anterior
+            leaving += [e.event_id for e in new_events if e.event_id in builder]
 
             t0 = time.perf_counter()
             for event_id in leaving:
@@ -86,8 +88,8 @@ class ModularityMonitor:
 
             excluded = self.evaluator.excluded
             entering = []  # (politica, eventos)
-            if new is not None:
-                entering.append((new, [e for e in new.events if e.event_id not in excluded]))
+            if new_events:
+                entering.append((new, [e for e in new_events if e.event_id not in excluded]))
             by_owner: Dict[str, List[str]] = {}
             for event_id, owner in (released or {}).items():
                 by_owner.setdefault(owner, []).append(event_id)
@@ -115,6 +117,8 @@ class ModularityMonitor:
                 op = "add"
             elif new is None:
                 op = "remove"
+            elif old.active != new.active:
+                op = "activate" if new.active else "deactivate"
             else:
                 op = "move" if old is new else "update"
             return self.record_swap(policy, op=op, t_incremental=t_incremental, t_graph=t_graph)
@@ -268,7 +272,10 @@ class ModularityMonitor:
 
     def _rebuild_locked(self) -> None:
         log.info("[ModularityMonitor] Reconstruyendo grafo…")
-        policies = list(self.evaluator.policies.values())
+        everything = list(self.evaluator.policies.values())
+        # solo las activas entran al grafo, a louvain y a la auditoria; las inactivas siguen en el
+        # evaluador, sin comunidad, con sus eventos
+        policies = [p for p in everything if p.active]
         stats: Dict[str, object] = {}
         clock = time.perf_counter
 
@@ -316,7 +323,9 @@ class ModularityMonitor:
             stats["t_louvain_used_s"] = clock() - t0
 
         t0 = clock()
-        self.evaluator.run(policies, policies_by_community, excluded)  # swap en el evaluador
+        audited = {p.policy_id: p for p in policies}
+        self.evaluator.run([audited.get(p.policy_id, p) for p in everything], policies_by_community,
+                           excluded)  # swap en el evaluador
         stats["t_index_s"] = clock() - t0
 
         t0 = clock()

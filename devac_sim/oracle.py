@@ -56,7 +56,8 @@ def _covers(component: tuple, value: str) -> bool:
 
 
 def _compile(policy: Policy) -> CompiledPolicy:
-    return policy.effect, [[_compile_value(getattr(e, d).value) for d in DIMENSIONS] for e in policy.events]
+    events = policy.events if policy.active else []  # inactiva: no aplica
+    return policy.effect, [[_compile_value(getattr(e, d).value) for d in DIMENSIONS] for e in events]
 
 
 # el evaluador pasa los valores a minusculas al indexar; las reglas ven eso mismo

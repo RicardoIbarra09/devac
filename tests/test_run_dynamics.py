@@ -20,8 +20,8 @@ def test_plan_mixto_reactiva_lo_que_desactivo():
         if change["change"] == "deactivate":
             inactive.add(change["policy_id"])
         elif change["change"] == "reactivate":
-            pid = change["policy"]["policy_id"]
-            assert pid in inactive and change["policy"]["events"]
+            pid = change["policy_id"]
+            assert pid in inactive and "policy" not in change  # la politica guarda sus eventos
             inactive.remove(pid)
     assert {c["change"] for c in plan} == {"add", "update", "remove", "deactivate", "reactivate"}
 

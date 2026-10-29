@@ -68,6 +68,8 @@ class Policy(BaseModel):
     effect:          str
     reconfigure_on:  List[str]     = []  # eventos de dominio que pueden reescribir la politica
     on_deny:         Optional[str] = None  # alert / escalate
+    # inactiva: conserva sus eventos pero no se indexa, no se evalua y no esta en el grafo ni en Q
+    active:          bool          = True
 
     @classmethod
     def from_json(cls, path: str) -> "Policy":

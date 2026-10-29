@@ -80,3 +80,31 @@ def test_valida_dsl(make_client):
     assert client.post("/v1/policies", json=mala).status_code == 422
     sin_eventos = {**policy("P_VACIA"), "events": []}
     assert client.post("/v1/policies", json=sin_eventos).status_code == 422
+
+
+def test_activar_y_desactivar_sin_reenviar(make_client):
+    client = make_client(BASE_POLICIES)
+    version = int(client.get("/v1/policies").headers.get("X-Policy-Version", 0))
+
+    r = client.post("/v1/policies/P_MEDICO/deactivate")
+    assert r.status_code == 200
+    assert r.json()["active"] is False and r.json()["community"] is None
+    assert int(r.headers["X-Policy-Version"]) > version
+    # conserva sus eventos, pero ya no decide
+    detalle = client.get("/v1/policies/P_MEDICO").json()
+    assert detalle["active"] is False and [e["event_id"] for e in detalle["events"]] == ["E_MED"]
+    for engine in ("devac", "baseline"):
+        assert client.post(f"/v1/evaluate?engine={engine}", json=request()).json()["decision"] == "deny"
+    assert client.get("/v1/stats").json()["active_policies"] == len(BASE_POLICIES) - 1
+
+    # un PUT sin "active" no la reactiva
+    actualizada = policy("P_MEDICO", events=[event("E_MED", time={"range": ["07:00", "20:00"]})])
+    assert client.put("/v1/policies/P_MEDICO", json=actualizada).json()["active"] is False
+
+    r = client.post("/v1/policies/P_MEDICO/activate")
+    assert r.status_code == 200 and r.json()["active"] is True and r.json()["community"] is not None
+    for engine in ("devac", "baseline"):
+        decision = client.post(f"/v1/evaluate?engine={engine}", json=request(time="07:30")).json()
+        assert decision["decision"] == "allow" and decision["policy_id"] == "P_MEDICO"
+
+    assert client.post("/v1/policies/NO_EXISTE/activate").status_code == 404

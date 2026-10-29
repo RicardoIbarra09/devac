@@ -28,6 +28,8 @@ class TraditionalPolicyEvaluator:
         steps = 0
         # recorrido lineal, sin indices
         for policy in self.policies:
+            if not policy.active:
+                continue
             for event in policy.events:
                 steps += 1
                 if EventMatcher.match_event(event, request):

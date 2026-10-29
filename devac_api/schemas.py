@@ -80,6 +80,8 @@ class PolicyIn(BaseModel):
     effect: Literal["allow", "deny"]
     reconfigure_on: List[str] = []
     on_deny: Optional[Literal["alert", "escalate"]] = None
+    # al crear, None = activa; en PUT, None = conserva el estado actual
+    active: Optional[bool] = None
 
 
 class EventOut(BaseModel):
@@ -98,6 +100,7 @@ class PolicyOut(BaseModel):
     events: List[EventOut]
     reconfigure_on: List[str]
     on_deny: Optional[str]
+    active: bool
     community: Optional[str]
 
 
@@ -105,6 +108,7 @@ class PolicySummary(BaseModel):
     policy_id: str
     effect: str
     n_events: int
+    active: bool
     community: Optional[str]
 
 

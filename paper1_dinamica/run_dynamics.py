@@ -58,50 +58,55 @@ def _with_value_from(policy: dict, donor: dict, rng: random.Random) -> None:
 
 def build_plan(policies: List[dict], scenario: str, changes: int, seed: int) -> List[dict]:
     rng = random.Random(f"{seed}-plan")
-    active: Dict[str, dict] = {p["policy_id"]: p for p in copy.deepcopy(policies) if p["events"]}
-    inactive: Dict[str, dict] = {}  # politica con sus eventos de antes de desactivarla
+    # contenido vigente de cada politica (de ahi salen las copias y los valores que se mezclan) y cuales
+    # estan desactivadas; una desactivada conserva sus eventos, asi que reactivarla solo lleva su id
+    current: Dict[str, dict] = {p["policy_id"]: p for p in copy.deepcopy(policies) if p["events"]}
+    inactive: Set[str] = set()
     plan = []
 
+    def active() -> List[str]:
+        return sorted(set(current) - inactive)
+
     if scenario == "deactivation":
-        if changes > len(active):
-            raise SystemExit(f"solo hay {len(active)} políticas activas para {changes} desactivaciones")
-        for pid in rng.sample(sorted(active), changes):
+        if changes > len(current):
+            raise SystemExit(f"solo hay {len(current)} políticas activas para {changes} desactivaciones")
+        for pid in rng.sample(active(), changes):
             plan.append({"change": "deactivate", "policy_id": pid})
         return plan
 
     next_id = 1
     for _ in range(changes):
         kinds = [k for k in MIXED_WEIGHTS if k != "reactivate" or inactive]
-        if len(active) <= 1:
+        if len(active()) <= 1:
             kinds = [k for k in kinds if k in ("add", "reactivate")]  # nunca se queda sin politicas
         kind = rng.choices(kinds, [MIXED_WEIGHTS[k] for k in kinds])[0]
 
         if kind == "add":
-            policy = copy.deepcopy(active[rng.choice(sorted(active))])
-            _with_value_from(policy, active[rng.choice(sorted(active))], rng)
+            policy = copy.deepcopy(current[rng.choice(active())])
+            _with_value_from(policy, current[rng.choice(active())], rng)
             policy["policy_id"] = f"dyn-p{next_id:05d}"
             policy["description"] = "agregada por run_dynamics"
             for k, event in enumerate(policy["events"], start=1):
                 event["event_id"] = f"dyn-p{next_id:05d}-e{k}"
             next_id += 1
-            active[policy["policy_id"]] = policy
+            current[policy["policy_id"]] = policy
             plan.append({"change": kind, "policy": copy.deepcopy(policy)})
         elif kind == "update":
-            pid = rng.choice(sorted(active))
-            _with_value_from(active[pid], active[rng.choice(sorted(active))], rng)
-            plan.append({"change": kind, "policy": copy.deepcopy(active[pid])})
+            pid = rng.choice(active())
+            _with_value_from(current[pid], current[rng.choice(active())], rng)
+            plan.append({"change": kind, "policy": copy.deepcopy(current[pid])})
         elif kind == "remove":
-            pid = rng.choice(sorted(active))
-            del active[pid]
+            pid = rng.choice(active())
+            del current[pid]
             plan.append({"change": kind, "policy_id": pid})
         elif kind == "deactivate":
-            pid = rng.choice(sorted(active))
-            inactive[pid] = active.pop(pid)
+            pid = rng.choice(active())
+            inactive.add(pid)
             plan.append({"change": kind, "policy_id": pid})
         else:
             pid = rng.choice(sorted(inactive))
-            active[pid] = inactive.pop(pid)
-            plan.append({"change": kind, "policy": copy.deepcopy(active[pid])})
+            inactive.remove(pid)
+            plan.append({"change": kind, "policy_id": pid})
     return plan
 
 
@@ -109,14 +114,15 @@ def apply_change(evaluator: CommunityPolicyEvaluator, change: dict) -> None:
     kind = change["change"]
     if kind == "add":
         evaluator.add_policy(Policy.model_validate(change["policy"]))
-    elif kind in ("update", "reactivate"):
+    elif kind == "update":
         evaluator.update_policy(Policy.model_validate(change["policy"]))
     elif kind == "remove":
         evaluator.remove_policy(change["policy_id"])
+    elif kind == "deactivate":
+        # conserva sus eventos; para el grafo y Q es lo mismo que borrarla
+        evaluator.deactivate_policy(change["policy_id"])
     else:
-        # desactivar = dejarla sin eventos; para el grafo y Q es lo mismo que borrarla
-        current = evaluator.policies[change["policy_id"]]
-        evaluator.update_policy(current.model_copy(update={"events": []}))
+        evaluator.activate_policy(change["policy_id"])
 
 
 def rep_seed(seed: int, rep: int) -> int:
@@ -240,7 +246,7 @@ def parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description="Q completa vs Q incremental ante cambios de políticas")
     ap.add_argument("--policies", default="experiments/politicas_un_evento.json")
     ap.add_argument("--scenario", choices=sorted(DEFAULT_CHANGES), required=True,
-                    help="deactivation = desactivaciones (events=[]); mixed = altas, cambios, bajas, "
+                    help="deactivation = desactivaciones (deactivate_policy); mixed = altas, cambios, bajas, "
                          "desactivaciones y reactivaciones")
     ap.add_argument("--changes", type=int, help="por defecto 1000 (deactivation) u 821 (mixed)")
     ap.add_argument("--stress-threshold", type=float, default=0.05,

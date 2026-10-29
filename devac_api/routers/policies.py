@@ -77,7 +77,26 @@ async def replace_policy(policy_id: str, body: PolicyIn, response: Response,
                          engine: DevacEngine = Depends(get_engine)) -> PolicySummary:
     if body.policy_id != policy_id:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "policy_id del cuerpo no coincide con la ruta")
-    policy = await engine.update_policy(policy_from_dto(body))
+    policy = policy_from_dto(body)
+    if body.active is None:
+        # sin "active" en el cuerpo, PUT no activa ni desactiva
+        policy.active = engine.get_policy(policy_id).active
+    policy = await engine.update_policy(policy)
+    _stamp(response, engine)
+    return policy_summary(policy, engine.community_map().get(policy_id))
+
+
+@router.post("/{policy_id}/activate", response_model=PolicySummary)
+async def activate_policy(policy_id: str, response: Response, engine: DevacEngine = Depends(get_engine)) -> PolicySummary:
+    policy = await engine.set_policy_active(policy_id, True)
+    _stamp(response, engine)
+    return policy_summary(policy, engine.community_map().get(policy_id))
+
+
+@router.post("/{policy_id}/deactivate", response_model=PolicySummary)
+async def deactivate_policy(policy_id: str, response: Response,
+                            engine: DevacEngine = Depends(get_engine)) -> PolicySummary:
+    policy = await engine.set_policy_active(policy_id, False)
     _stamp(response, engine)
     return policy_summary(policy, engine.community_map().get(policy_id))
 

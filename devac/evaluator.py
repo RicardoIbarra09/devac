@@ -69,7 +69,7 @@ class CommunityPolicyEvaluator:
         self.policy_community = self._membership(policies_by_community)
         self.excluded = dict(excluded or {})
 
-        self.attribute_weights = GraphBuilder.calculate_attribute_weights(policies)
+        self.attribute_weights = GraphBuilder.calculate_attribute_weights(policies)  # ignora las inactivas
 
         self._rebuild_all_indices()
 
@@ -88,7 +88,7 @@ class CommunityPolicyEvaluator:
 
             for pid in pids:
                 policy = self.policies.get(pid)
-                if not policy:
+                if not policy or not policy.active:
                     continue
                 is_deny = policy.effect == "deny"
 
@@ -160,7 +160,7 @@ class CommunityPolicyEvaluator:
 
         for pid in pids:
             policy = self.policies.get(pid)
-            if not policy:
+            if not policy or not policy.active:
                 continue
 
             for e in policy.events:
@@ -246,7 +246,7 @@ class CommunityPolicyEvaluator:
 
         self.policies[policy.policy_id] = policy
 
-        if auto_assign_community:
+        if auto_assign_community and policy.active:
             best_community = self._choose_community(policy)
             if best_community is not None:
                 self._assign(policy.policy_id, best_community)
@@ -349,7 +349,7 @@ class CommunityPolicyEvaluator:
             print(f"[INFO] Política {policy_id} eliminada de comunidad {community_id}")
         else:
             print(f"[WARNING] Política {policy_id} no estaba asignada a ninguna comunidad")
-        self._reindex_released(released, skip=community_id)
+        self._reindex_released(released, skip=(community_id,))
         self._notify_policy_change(removed_policy, None, released)
 
     def update_policy(self, updated_policy: Policy):
@@ -371,16 +371,51 @@ class CommunityPolicyEvaluator:
 
         community_id = self.policy_community.get(pid)
         released = self._release_exclusions(pid)
-        if community_id is None and updated_policy.events:
-            # estaba sin comunidad (p. ej. desactivada antes de una reconstruccion): se reactiva
-            community_id = self._choose_community(updated_policy)
-            self._assign(pid, community_id)
-            print(f"[INFO] Política {pid} reactivada en comunidad {community_id}")
-        elif community_id is not None:
+        left = None
+        if community_id is not None and not (self._in_use(previous_policy) and self._in_use(updated_policy)):
+            # se vacio o se desactivo, o venia vacia o inactiva: sin nodos su comunidad ya no dice nada.
+            # si vuelve a tener eventos se coloca con la ganancia de modularidad, como una nueva
+            self._unassign(pid)
+            left, community_id = community_id, None
+        if community_id is None:
+            if self._in_use(updated_policy):
+                community_id = self._choose_community(updated_policy)
+                if community_id is not None:
+                    self._assign(pid, community_id)
+                print(f"[INFO] Política {pid} reactivada en comunidad {community_id}")
+        else:
             self._rebuild_community_indices(community_id)
             print(f"[INFO] Política {pid} actualizada en comunidad {community_id}")
-        self._reindex_released(released, skip=community_id)
+        self._reindex_released(released, skip=(left, community_id))
         self._notify_policy_change(previous_policy, updated_policy, released)
+
+    # desactivar: conserva los eventos, pero salen de los indices, del grafo y de Q (lo mismo que
+    # dejarla con events=[]). activar: vuelven y la politica toma comunidad con la ganancia de modularidad
+    def deactivate_policy(self, policy_id: str) -> Optional[Policy]:
+        return self._set_active(policy_id, False)
+
+    def activate_policy(self, policy_id: str) -> Optional[Policy]:
+        return self._set_active(policy_id, True)
+
+    def _set_active(self, policy_id: str, active: bool) -> Optional[Policy]:
+        policy = self.policies.get(policy_id)
+        if policy is None:
+            print(f"[WARNING] Política {policy_id} no existe")
+            return None
+        if policy.active != active:
+            self.update_policy(policy.model_copy(update={"active": active}))
+        return self.policies[policy_id]
+
+    # tiene eventos que se indexan y estan en el grafo
+    @staticmethod
+    def _in_use(policy: Optional[Policy]) -> bool:
+        return policy is not None and policy.active and bool(policy.events)
+
+    def _unassign(self, policy_id: str) -> None:
+        community_id = self.policy_community.pop(policy_id, None)
+        if community_id is not None:
+            self.policies_by_community[community_id].remove(policy_id)
+            self._rebuild_community_indices(community_id)
 
     # al cambiar o borrar una politica, los eventos que ella cubria vuelven a los indices y los
     # suyos dejan de estar excluidos (su contenido ya no es el que se audito).
@@ -393,20 +428,20 @@ class CommunityPolicyEvaluator:
                 released[eid] = owner
         return released
 
-    def _reindex_released(self, released: Dict[str, str], skip=None) -> None:
+    def _reindex_released(self, released: Dict[str, str], skip=()) -> None:
         communities = set()
         for owner in sorted(set(released.values())):
             comm = self.policy_community.get(owner)
             if comm is not None:
                 communities.add(comm)
-            elif owner in self.policies:
+            elif owner in self.policies and self.policies[owner].active:
                 # tenia todos sus eventos excluidos y la particion no le dio comunidad
                 policy = self.policies[owner]
                 usable = policy.model_copy(update={"events": [e for e in policy.events if e.event_id not in self.excluded]})
                 comm = self._choose_community(usable)
                 if comm is not None:
                     self._assign(owner, comm)  # ya rehace los indices de esa comunidad
-        for comm in communities - {skip}:
+        for comm in communities - set(skip):
             self._rebuild_community_indices(comm)
 
     def move_policy_to_community(self, policy_id: str, target_community_id: str):
@@ -530,7 +565,7 @@ class CommunityPolicyEvaluator:
                 for pid in self.policies_by_community.get(comm, []):
                     policy = self.policies.get(pid)
                     # en esta pasada solo cuentan los deny
-                    if not policy or policy.effect != "deny":
+                    if not policy or not policy.active or policy.effect != "deny":
                         continue
                     for event in policy.events:
                         if event.event_id in self.excluded:
@@ -557,7 +592,7 @@ class CommunityPolicyEvaluator:
             already_checked_deny = comm in deny_candidates
             for pid in self.policies_by_community.get(comm, []):
                 policy = self.policies.get(pid)
-                if not policy:
+                if not policy or not policy.active:
                     continue
                 # ya se revisaron arriba
                 if already_checked_deny and policy.effect == "deny":
@@ -617,8 +652,9 @@ class CommunityPolicyEvaluator:
 
         for pid in self.policies:
             if pid not in assigned_pids:
-                # sin eventos que usar (vacia o con todos excluidos) = inactiva, es normal que no tenga comunidad
-                if all(e.event_id in self.excluded for e in self.policies[pid].events):
+                # sin eventos que usar (inactiva, vacia o con todos excluidos): es normal que no tenga comunidad
+                policy = self.policies[pid]
+                if not policy.active or all(e.event_id in self.excluded for e in policy.events):
                     continue
                 issues.append(f"Política {pid} no está asignada a ninguna comunidad")
 
@@ -626,7 +662,7 @@ class CommunityPolicyEvaluator:
             expected_count = sum(
                 1
                 for pid in self.policies_by_community.get(comm_id, [])
-                if pid in self.policies
+                if pid in self.policies and self.policies[pid].active
                 for e in self.policies[pid].events
                 if e.event_id not in self.excluded
             )
