@@ -71,7 +71,8 @@ METHODS = [
     ("t_incremental_s", "Modularidad incremental", GREEN),
     ("t_graph_s", "Actualizar nodos y aristas (ambos metodos)", MUTED),
 ]
-DATASET_LABELS = {"politicas_un_evento": "Un evento (n=2000)", "politicas_w4u_n2000_s1": "W4-U (n=2000)"}
+DATASET_LABELS = {"politicas_un_evento": "Un evento (n=2000)", "politicas_w4u_n2000_s1": "W4-U (n=2000)",
+                  "w4u_n20000_s1": "W4-U (n=20000)"}
 DATASET_COLORS = [GREEN, ORANGE, BLUE, MUTED]
 
 
@@ -209,12 +210,12 @@ def fig_d2_escalamiento(job_dir):
 REBUILD_PHASES = [
     (lambda f: f["t_build_s"], "Grafo", BLUE),
     (lambda f: f["t_louvain_s"], "Louvain", GREEN),
-    (lambda f: f["t_audit_s"], "Auditoria", ORANGE),
-    (lambda f: f["t_build_used_s"] + f["t_louvain_used_s"], "Segunda pasada (grafo + Louvain)", MUTED),
+    (lambda f: f["t_index_s"] + f["t_q_s"], "Indices + Q desde cero", MUTED),
 ]
 
 
-# reconstruccion completa al final de los cambios (--final-rebuild), total y por fase
+# reconstruccion completa al final de los cambios (--final-rebuild), total y por fase. en el paper 1
+# es sin auditoria: grafo + louvain (mas reindexar y recalcular Q)
 def fig_d2_reconstruccion(job_dir):
     points = {}
     for folder in subfolders(job_dir):
@@ -235,7 +236,7 @@ def fig_d2_reconstruccion(job_dir):
     fig, ax = plt.subplots(figsize=(7.5, 4.4))
     ys, err = series(lambda f: f["s"])
     ax.errorbar(sizes, ys, yerr=err, color=INK, marker="o", markersize=4, linewidth=1.6, capsize=2.5,
-                label="Reconstruccion completa")
+                label="Reconstruccion completa (grafo + Louvain)")
     for fn, name, color in REBUILD_PHASES:
         ys, _ = series(fn)
         ax.plot(sizes, ys, color=color, marker="o", markersize=3, linewidth=1.1, linestyle="--", label=name)
@@ -369,46 +370,60 @@ D5_STYLE = {"periodic": (ORANGE, "Periodica (cada k cambios)"), "stress": (GREEN
 SCENARIO_LABELS = {"deactivation": "desactivacion", "mixed": "mixto"}
 
 
-def fig_d5_periodico(job_dir, d2_csv):
+def _fig_d5(rows, key, xlabel, name, note):
+    by_panel = groups_d5(rows)
+    # w4-u primero (conjunto principal), despues la red grande y el secundario
+    panels = sorted(by_panel, key=lambda dc: (dc[0] == "politicas_un_evento", dc[0], dc[1]))
+    ncols = min(2, len(panels))
+    nrows = (len(panels) + ncols - 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols, figsize=(5.4 * ncols, 4.1 * nrows), squeeze=False)
+    for ax, (dataset, scenario) in zip(axes.flat, panels):
+        for rule, (color, legend) in D5_STYLE.items():
+            points = [g for g in by_panel[(dataset, scenario)].values() if g[0]["rule"] == rule]
+            points.sort(key=lambda g: g[0]["param"] or 0)
+            if not points:
+                continue
+            xs = [mean(r[key] for r in g) for g in points]
+            ys = [mean(r["mean_q"] for r in g) for g in points]
+            ax.errorbar(xs, ys, xerr=[ci95([r[key] for r in g]) for g in points],
+                        yerr=[ci95([r["mean_q"] for r in g]) for g in points], color=color, marker="o",
+                        markersize=5, linewidth=1.2 if rule != "none" else 0, capsize=2.5, label=legend)
+            for x, y, g in zip(xs, ys, points):
+                if rule != "none":
+                    ax.annotate(f"{g[0]['strategy']} ({mean(r['rebuilds'] for r in g):.0f})", (x, y),
+                                textcoords="offset points", xytext=(5, 4), fontsize=7.5, color=color)
+        ax.set_title(f"{label(dataset)}, {SCENARIO_LABELS.get(scenario, scenario)}", fontsize=10.5, loc="left")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel("Q promedio")
+        clean_axes(ax, x_grid=True)
+    for ax in list(axes.flat)[len(panels):]:
+        ax.set_visible(False)
+    legend = {}  # una sola leyenda con las reglas de todos los paneles
+    for ax in axes.flat:
+        for handle, text in zip(*ax.get_legend_handles_labels()):
+            legend.setdefault(text, handle)
+    fig.legend(legend.values(), legend.keys(), frameon=False, fontsize=8.5, loc="upper center",
+               bbox_to_anchor=(0.5, 0.0), ncol=len(legend))
+    fig.text(0.01, -0.05, note, fontsize=8, color=MUTED)
+    fig.tight_layout()
+    save(fig, name, bbox_inches="tight")
+
+
+# costo principal: nodos + aristas reconstruidos (y entre parentesis las reconstrucciones), que no dependen
+# de la maquina. si hay resumen de D2, otra figura con los segundos estimados, marcada como estimacion
+def fig_d5_periodico(job_dirs, d2_csv):
     model = cost_model(d2_csv)
-    rows = collect_d5(job_dir, model)
+    rows = collect_d5(job_dirs, model)
     if not rows:
         return
+    _fig_d5(rows, "rebuilt_size", "Nodos + aristas reconstruidos", "fig_d5_periodico",
+            "Un punto por estrategia (media de las repeticiones); entre parentesis, reconstrucciones. "
+            "Barras de error: IC95")
     if model is None:
-        print("  aviso: sin resumen de D2, el eje x de D5 es nodos + aristas reconstruidos")
-    key, xlabel = (("est_cost_s", "Costo total estimado con D2 (s)") if model else
-                   ("rebuilt_size", "Nodos + aristas reconstruidos"))
-    by_panel = groups_d5(rows)
-    datasets = sorted({d for d, _ in by_panel})
-    scenarios = sorted({c for _, c in by_panel})
-    fig, axes = plt.subplots(len(datasets), len(scenarios), figsize=(5.2 * len(scenarios), 4.0 * len(datasets)),
-                             squeeze=False)
-    for i, dataset in enumerate(datasets):
-        for j, scenario in enumerate(scenarios):
-            ax = axes[i][j]
-            for rule, (color, name) in D5_STYLE.items():
-                points = [g for g in by_panel.get((dataset, scenario), {}).values() if g[0]["rule"] == rule]
-                points.sort(key=lambda g: g[0]["param"] or 0)
-                if not points:
-                    continue
-                xs = [mean(r[key] for r in g) for g in points]
-                ys = [mean(r["mean_q"] for r in g) for g in points]
-                ax.errorbar(xs, ys, xerr=[ci95([r[key] for r in g]) for g in points],
-                            yerr=[ci95([r["mean_q"] for r in g]) for g in points], color=color, marker="o",
-                            markersize=5, linewidth=1.2 if rule != "none" else 0, capsize=2.5, label=name)
-                for x, y, g in zip(xs, ys, points):
-                    if rule != "none":
-                        ax.annotate(g[0]["strategy"], (x, y), textcoords="offset points", xytext=(5, 4),
-                                    fontsize=7.5, color=color)
-            ax.set_title(f"{label(dataset)}, {SCENARIO_LABELS.get(scenario, scenario)}", fontsize=10.5, loc="left")
-            ax.set_xlabel(xlabel)
-            ax.set_ylabel("Q promedio")
-            clean_axes(ax, x_grid=True)
-    axes[0][0].legend(frameon=False, fontsize=8.5)
-    fig.text(0.01, 0.0, "Un punto por estrategia (media de las repeticiones); barras de error: IC95",
-             fontsize=8, color=MUTED)
-    fig.tight_layout()
-    save(fig, "fig_d5_periodico", bbox_inches="tight")
+        print("  aviso: sin resumen de D2, se omite fig_d5_periodico_estimado")
+        return
+    _fig_d5(rows, "est_cost_s", "Costo total estimado con los tiempos de D2 (s)", "fig_d5_periodico_estimado",
+            "Estimacion: reconstrucciones y cambios con los tiempos de D2 (node422), no medidos en esta corrida")
 
 
 def _job(arg, experiment):
@@ -424,6 +439,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Figuras del paper 1 (dinamica de la red de eventos)")
     for exp in ("d1", "d2", "d3", "d4", "d5"):
         parser.add_argument(f"--{exp}", help=f"carpeta del job de {exp.upper()} (por defecto la mas reciente)")
+    parser.add_argument("--d5-grande", help="carpeta del job de d5_grande.sbatch (por defecto la mas reciente)")
     parser.add_argument("--d2-csv", default=str(RESULTS / "d2_escalamiento.csv"),
                         help="resumen de D2 con el que se estima el costo de D5 en segundos")
     parser.add_argument("--out-dir", help="por defecto paper1_dinamica/figuras")
@@ -451,8 +467,9 @@ def main(argv=None):
             fig_d3_q(runs, folder.name, args.rep)
     if job := _job(args.d4, "d4"):
         fig_d4_sensibilidad(job)
-    if job := _job(args.d5, "d5"):
-        fig_d5_periodico(job, Path(args.d2_csv))
+    d5 = [job for job in (_job(args.d5, "d5"), _job(args.d5_grande, "d5_grande")) if job]
+    if d5:
+        fig_d5_periodico(d5, Path(args.d2_csv))
     print(f"listo -- figuras en {OUT}")
 
 

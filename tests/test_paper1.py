@@ -44,6 +44,9 @@ def _fake_results(raw):
                 tag = {"10": "every10", "0.02": "theta0.02", "1e9": "none"}[rule[-1]]
                 _run(raw / "d5/105/nimbus", "--scenario", scenario, "--changes", "30", *rule, "--tag", tag,
                      "--networkx-sample", "0", "--rep", rep)
+        # como d5_grande.sbatch: otra red, solo desactivacion, en su propio job
+        _run(raw / "d5_grande/106/grande", "--scenario", "deactivation", "--changes", "20", "--stress-threshold",
+             "1e9", "--rebuild-every", "10", "--tag", "every10", "--networkx-sample", "0", "--rep", rep)
 
 
 def test_d1_a_d5_resumenes_y_figuras(tmp_path, capsys):
@@ -73,11 +76,14 @@ def test_d1_a_d5_resumenes_y_figuras(tmp_path, capsys):
 
     # D5, con el costo en segundos estimado a partir del resumen de D2
     resumen_d5 = _load(P1 / "D5_periodico" / "resumen_d5.py")
-    assert resumen_d5.main([str(raw / "d5/105"), str(out / "d5.csv"), "--d2", str(out / "d2.csv")]) == 0
+    assert resumen_d5.main([str(raw / "d5/105"), str(raw / "d5_grande/106"), "--out", str(out / "d5.csv"),
+                            "--d2", str(out / "d2.csv")]) == 0
     with open(out / "d5.csv", newline="") as f:
         d5 = list(csv.DictReader(f))
-    assert len(d5) == 12 and {row["strategy"] for row in d5} == {"k=10", "theta=0.02", "sin reconstruir"}
-    for row in d5:
+    assert len(d5) == 14 and {row["strategy"] for row in d5} == {"k=10", "theta=0.02", "sin reconstruir"}
+    assert {row["dataset"] for row in d5} == {"nimbus", "grande"}
+    assert all(row["audit"] == "False" for row in d5)
+    for row in [r for r in d5 if r["dataset"] == "nimbus"]:
         assert float(row["est_cost_s"]) > 0 and float(row["min_q"]) <= float(row["mean_q"])
         if row["rule"] == "periodic":
             assert int(row["rebuilds"]) == 3 and int(row["rebuilt_size"]) > 0
@@ -86,10 +92,12 @@ def test_d1_a_d5_resumenes_y_figuras(tmp_path, capsys):
 
     figures = _load(P1 / "figuras" / "make_figures.py")
     figures.main(["--d1", str(raw / "d1/101"), "--d2", str(raw / "d2/102"), "--d3", str(raw / "d3/103"),
-                  "--d4", str(raw / "d4/104"), "--d5", str(raw / "d5/105"), "--d2-csv", str(out / "d2.csv"),
+                  "--d4", str(raw / "d4/104"), "--d5", str(raw / "d5/105"), "--d5-grande", str(raw / "d5_grande/106"),
+                  "--d2-csv", str(out / "d2.csv"),
                   "--d2-events", "100", "--out-dir", str(tmp_path / "figuras")])
     for name in ("fig_d1_exactitud", "fig_d2_escalamiento", "fig_d2_reconstruccion", "fig_d2_costo_en_el_tiempo_n100",
-                 "fig_d3_estres_nimbus", "fig_d3_q_nimbus", "fig_d4_sensibilidad", "fig_d5_periodico"):
+                 "fig_d3_estres_nimbus", "fig_d3_q_nimbus", "fig_d4_sensibilidad", "fig_d5_periodico",
+                 "fig_d5_periodico_estimado"):
         assert (tmp_path / "figuras" / f"{name}.png").exists(), name
     capsys.readouterr()
 
@@ -133,4 +141,21 @@ def test_reconstruccion_periodica(tmp_path, capsys):
     assert [r["q_incremental"] for r in rows[:10]] == [r["q_incremental"] for r in plain[:10]]
     assert meta["replications"][0]["plan_counts"] == json.loads(
         (tmp_path / "mixed_norebuild_r01_meta.json").read_text())["replications"][0]["plan_counts"]
+    capsys.readouterr()
+
+
+# el paper 1 corre sin auditoria: la reconstruccion es solo grafo + louvain, sin segunda pasada
+def test_paper1_sin_auditoria_por_defecto(tmp_path, capsys):
+    _run(tmp_path, "--scenario", "deactivation", "--changes", "20", "--stress-threshold", "1e9",
+         "--rebuild-every", "10", "--rep", "1", "--final-rebuild", "--networkx-sample", "0")
+    meta = json.loads((tmp_path / "deactivation_every10_r01_meta.json").read_text())
+    assert meta["audit"] is False and meta["params"]["audit"] is False
+    s = meta["replications"][0]
+    assert s["excluded_initial"] == 0 and s["rebuilds"] == 2
+    for phases in [s["mean_rebuild_phases_s"], s["final_rebuild"]]:
+        assert phases["t_audit_s"] == phases["t_build_used_s"] == phases["t_louvain_used_s"] == 0.0
+    assert s["final_rebuild"]["t_build_s"] > 0 and s["final_rebuild"]["t_louvain_s"] > 0
+
+    _run(tmp_path, "--scenario", "deactivation", "--changes", "5", "--rep", "1", "--audit", "--tag", "aud")
+    assert json.loads((tmp_path / "deactivation_aud_r01_meta.json").read_text())["audit"] is True
     capsys.readouterr()

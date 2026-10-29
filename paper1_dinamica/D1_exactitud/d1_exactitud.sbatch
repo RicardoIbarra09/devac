@@ -13,7 +13,7 @@
 set -euo pipefail
 
 # ---------------- Parametros del experimento -------------------
-DATASETS=(politicas_un_evento politicas_w4u_n2000_s1)
+DATASETS=(politicas_w4u_n2000_s1 politicas_un_evento)   # principal y secundario (sin auditoria tiene muchos eventos repetidos)
 SCENARIOS=(deactivation mixed)
 CHANGES=("${CHANGES_DEACT:-1500}" "${CHANGES_MIXED:-5000}")   # el test usa 1,000 operaciones
 CHECK_EVERY="${CHECK_EVERY:-50}"     # cada cuantos cambios se compara contra un build completo

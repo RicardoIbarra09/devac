@@ -7,7 +7,8 @@ Sin reconstrucciones, para que todo el tramo pase por el camino incremental:
 - grafo incremental contra un build completo con los pesos congelados (nodos, aristas, pesos) cada
   `CHECK_EVERY` cambios (50) y al final, y la Q de networkx sobre ese grafo reconstruido.
 
-2 conjuntos (`politicas_un_evento`, `politicas_w4u_n2000_s1`) × 2 escenarios (desactivación 1,500
+Sin auditoría (`audit: false` en el meta.json), como todo el Paper 1. 2 conjuntos (`politicas_w4u_n2000_s1`
+principal, `politicas_un_evento` secundario) × 2 escenarios (desactivación 1,500
 cambios; mixto 5,000) × 3 repeticiones. La prueba de la suite usa 1,000 operaciones.
 
 ## Corrida (amd256)

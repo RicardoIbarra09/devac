@@ -13,7 +13,7 @@
 set -euo pipefail
 
 # ---------------- Parametros del experimento -------------------
-DATASETS=(politicas_un_evento politicas_w4u_n2000_s1)
+DATASETS=(politicas_w4u_n2000_s1 politicas_un_evento)   # principal y secundario (sin auditoria tiene muchos eventos repetidos)
 SCENARIOS=(deactivation mixed)
 # every<k> = reconstruye cada k cambios; theta<t> = regla de estres (los de D4); none = nunca
 STRATEGIES=(every25 every50 every100 every200 theta0.01 theta0.02 theta0.05 theta0.1 none)

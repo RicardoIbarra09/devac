@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # D5: reconstruccion periodica (cada k cambios) contra la regla de estres, con los mismos cambios.
-# por corrida: reconstrucciones, Q promedio, Q minima, nodos + aristas reconstruidos y costo total.
-# el costo en segundos se estima con los tiempos de D2 (resultados/d2_escalamiento.csv) si ya existe.
-# escribe resultados/d5_periodico.csv
+# por corrida: reconstrucciones, Q promedio, Q minima y costo. el costo principal es el numero de
+# reconstrucciones y los nodos + aristas reconstruidos (no dependen de la maquina); los segundos son una
+# estimacion con los tiempos de D2 (resultados/d2_escalamiento.csv), si ya existe.
+# junta el job de d5_periodico.sbatch y el de d5_grande.sbatch. escribe resultados/d5_periodico.csv
 #
 # uso:
-#   python3 paper1_dinamica/D5_periodico/resumen_d5.py                  (job mas reciente de resultados/crudo/d5)
-#   python3 paper1_dinamica/D5_periodico/resumen_d5.py resultados/crudo/d5/<JOB> [salida.csv] [--d2 d2.csv]
+#   python3 paper1_dinamica/D5_periodico/resumen_d5.py        (jobs mas recientes de crudo/d5 y crudo/d5_grande)
+#   python3 paper1_dinamica/D5_periodico/resumen_d5.py crudo/d5/<JOB> crudo/d5_grande/<JOB> [--out x.csv] [--d2 d2.csv]
 
 import argparse
 import json
@@ -15,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from datos import (RESULTS, ci95, cost_model, estimate_cost, job_dir_from_argv, load_runs, mean,  # noqa: E402
+from datos import (RESULTS, ci95, cost_model, estimate_cost, latest_job, load_runs, mean,  # noqa: E402
                    subfolders, write_csv)
 
 
@@ -30,9 +31,15 @@ def strategy(params: dict):
     return "stress", theta, f"theta={theta:g}"
 
 
-def collect(job_dir: Path, model=None) -> list:
+def default_jobs() -> list:
+    return [job for job in (latest_job("d5"), latest_job("d5_grande")) if job is not None]
+
+
+def collect(job_dirs, model=None) -> list:
     rows = []
-    for folder in subfolders(job_dir):
+    for job_dir, folder in ((j, f) for j in job_dirs for f in subfolders(j)):
+        if folder.name == "redes":
+            continue
         for config, entry in load_runs(folder, with_rows=False).items():
             for rep in entry["reps"]:
                 s, meta = rep["summary"], rep["meta"]
@@ -43,11 +50,13 @@ def collect(job_dir: Path, model=None) -> list:
                     "plan_seed": s["plan_seed"], "louvain_seed": s["louvain_seed"],
                     "plan_counts": json.dumps(s["plan_counts"], sort_keys=True),
                     "changes": s["changes"], "rebuilds": s["rebuilds"], "mean_q": s["mean_q"], "min_q": s["min_q"],
-                    # costo sin depender de la maquina: nodos + aristas de los grafos reconstruidos
+                    # costo principal, sin depender de la maquina: nodos + aristas de los grafos reconstruidos
                     "rebuilt_size": s["rebuilt_size"], "mean_size": s["mean_size"],
+                    # secundario: segundos estimados con los tiempos de D2 (node422)
+                    "est_rebuild_s": None, "est_update_s": None, "est_cost_s": None,
                     # medido en amd256 (timing_not_reported): no va al paper
                     "total_cost_s": s["total_update_s"] + s["total_rebuild_s"],
-                    "est_rebuild_s": None, "est_update_s": None, "est_cost_s": None,
+                    "audit": meta.get("audit"),
                     "node": meta["node"], "commit": meta["commit"], "timing": meta["timing"],
                 }
                 if model is not None:
@@ -77,30 +86,35 @@ def groups(rows: list) -> dict:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="resumen de D5")
-    ap.add_argument("job_dir", nargs="?")
-    ap.add_argument("out", nargs="?", default=str(RESULTS / "d5_periodico.csv"))
-    ap.add_argument("--d2", default=str(RESULTS / "d2_escalamiento.csv"), help="resumen de D2 para el costo en s")
+    ap.add_argument("job_dirs", nargs="*", help="por defecto los mas recientes de crudo/d5 y crudo/d5_grande")
+    ap.add_argument("--out", default=str(RESULTS / "d5_periodico.csv"))
+    ap.add_argument("--d2", default=str(RESULTS / "d2_escalamiento.csv"),
+                    help="resumen de D2 para estimar el costo en segundos")
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)
-    job_dir = job_dir_from_argv([args.job_dir] if args.job_dir else [], "d5")
+    job_dirs = [Path(j) for j in args.job_dirs] or default_jobs()
+    if not job_dirs or not all(j.is_dir() for j in job_dirs):
+        sys.exit("no hay resultados de D5 (resultados/crudo/d5/<JOB> o crudo/d5_grande/<JOB>)")
     model = cost_model(Path(args.d2))
-    rows = collect(job_dir, model)
+    rows = collect(job_dirs, model)
     if not rows:
-        sys.exit(f"no hay *_meta.json en {job_dir}")
+        sys.exit(f"no hay *_meta.json en {', '.join(map(str, job_dirs))}")
     write_csv(Path(args.out), rows)
 
-    print(f"{job_dir} -> {args.out}  (commit {rows[0]['commit']})")
+    print(f"{', '.join(map(str, job_dirs))} -> {args.out}  (commit {rows[0]['commit']})")
+    if any(r["audit"] is not False for r in rows):
+        print("AVISO: hay corridas con auditoria (o sin el campo audit); el paper 1 corre sin ella")
     if model is None:
-        print(f"sin {args.d2}: el costo en segundos queda vacio; corre antes resumen_d2.py")
+        print(f"sin {args.d2}: los segundos estimados quedan vacios; corre antes resumen_d2.py")
     else:
         (cr, br), (cu, bu) = model["rebuild"], model["update"]
-        print(f"costo con D2 ({model['source']}): reconstruccion = {cr:.2e} * x^{br:.2f}, "
+        print(f"segundos estimados con D2 ({model['source']}): reconstruccion = {cr:.2e} * x^{br:.2f}, "
               f"cambio = {cu:.2e} * x^{bu:.2f} (x = nodos + aristas)")
         if model["timing"] != ["reported"]:
             print("AVISO: el resumen de D2 trae corridas sin TIMING=1")
     for (dataset, scenario), by_strategy in groups(rows).items():
         print(f"\n{dataset}, {scenario}")
-        hdr = (f"  {'estrategia':<16} {'reps':>4} {'recons':>13} {'Q media':>17} {'Q min':>8} "
-               f"{'nodos+aristas recons':>21} {'costo D2 s':>15}")
+        hdr = (f"  {'estrategia':<16} {'reps':>4} {'recons':>13} {'nodos+aristas recons':>21} {'Q media':>17} "
+               f"{'Q min':>8} {'s estimados':>15}")
         print(hdr)
         print("  " + "-" * (len(hdr) - 2))
         for name, group in by_strategy.items():
@@ -109,10 +123,11 @@ def main(argv=None) -> int:
             cost = [r["est_cost_s"] for r in group]
             est = f"{mean(cost):>7.1f} ± {ci95(cost):<5.1f}" if model else f"{'-':>15}"
             print(f"  {name:<16} {len(group):>4} {mean(rebuilds):>6.1f} ± {ci95(rebuilds):<4.1f} "
-                  f"{mean(q):>7.4f} ± {ci95(q):<7.4f} {min(r['min_q'] for r in group):>8.4f} "
-                  f"{mean(r['rebuilt_size'] for r in group):>21,.0f} {est}")
-    print("\n± = IC95 entre repeticiones. 'Q min' = la minima en todas las repeticiones. 'costo D2 s' ="
-          "\nreconstrucciones + cambios incrementales con los tiempos de D2 (node422); total_cost_s del csv"
+                  f"{mean(r['rebuilt_size'] for r in group):>21,.0f} "
+                  f"{mean(q):>7.4f} ± {ci95(q):<7.4f} {min(r['min_q'] for r in group):>8.4f} {est}")
+    print("\n± = IC95 entre repeticiones. 'Q min' = la minima en todas las repeticiones."
+          "\nCosto: 'recons' y 'nodos+aristas recons' (no dependen de la maquina). 's estimados' es una"
+          "\nestimacion (reconstrucciones + cambios con los tiempos de D2 en node422); total_cost_s del csv"
           "\nviene de amd256 (timing_not_reported).")
     return 0
 

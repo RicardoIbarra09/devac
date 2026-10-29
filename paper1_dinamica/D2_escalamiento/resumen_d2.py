@@ -32,13 +32,13 @@ def collect(job_dir: Path) -> list:
                     "mean_t_networkx_s": s["mean_t_networkx_s"], "mean_t_incremental_s": s["mean_t_incremental_s"],
                     "mean_t_graph_s": s["mean_t_graph_s"], "initial_build_s": s["initial_build_s"],
                     "mean_size": s.get("mean_size"),
-                    # reconstruccion completa (grafo + louvain + auditoria + segunda pasada + indices) sobre
-                    # la red ya modificada, con --final-rebuild
+                    # reconstruccion completa sobre la red ya modificada (--final-rebuild): grafo + louvain,
+                    # mas reindexar y recalcular Q desde cero
                     "rebuild_s": final.get("s"), "rebuild_nodes": final.get("nodes"),
                     "rebuild_edges": final.get("edges"), "rebuild_t_build_s": final.get("t_build_s"),
-                    "rebuild_t_louvain_s": final.get("t_louvain_s"), "rebuild_t_audit_s": final.get("t_audit_s"),
-                    "rebuild_t_second_pass_s": (final["t_build_used_s"] + final["t_louvain_used_s"]
-                                                if final else None),
+                    "rebuild_t_louvain_s": final.get("t_louvain_s"),
+                    "rebuild_t_index_q_s": final["t_index_s"] + final["t_q_s"] if final else None,
+                    "audit": meta.get("audit"),
                     "max_rss_mb": meta.get("max_rss_mb"),
                     "max_abs_q_diff": s["max_abs_q_diff"], "node": meta["node"], "cpu": meta["cpu"],
                     "cpu_affinity": " ".join(map(str, meta.get("cpu_affinity") or [])),
@@ -64,6 +64,8 @@ def main(argv=None) -> int:
     print(f"{job_dir} -> {out}  (commit {rows[0]['commit']}, {rows[0]['node']}, {rows[0]['cpu']})")
     if any(r["timing"] != "reported" for r in rows):
         print("AVISO: hay corridas sin TIMING=1; esos tiempos no sirven para el paper")
+    if any(r["audit"] is not False for r in rows):
+        print("AVISO: hay corridas con auditoria (o sin el campo audit); el paper 1 mide sin ella")
     hdr = (f"{'eventos':>8} {'aristas':>9} {'reps':>4} {'Q completa ms':>17} {'Q incr us':>15} "
            f"{'grafo us':>15} {'veces':>7} {'Q medidas':>9} {'recons s':>15} {'RAM GB':>7}")
     print(hdr)
@@ -82,7 +84,8 @@ def main(argv=None) -> int:
               f"{max((r['max_rss_mb'] or 0) for r in group) / 1024:>7.1f}")
     print("\n± = IC95 entre repeticiones. 'veces' = Q completa / Q incremental."
           "\n'Q medidas' = cambios en los que se midio la Q completa (muestra con los tamanos grandes)."
-          "\n'recons s' = reconstruccion completa al final de los cambios; 'RAM GB' = pico del proceso (maximo).")
+          "\n'recons s' = reconstruccion completa (grafo + Louvain, sin auditoria) al final de los cambios;"
+          "\n'RAM GB' = pico del proceso (maximo).")
     return 0
 
 

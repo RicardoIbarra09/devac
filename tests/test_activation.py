@@ -15,13 +15,14 @@ ROOT = Path(__file__).resolve().parents[1]
 POLICIES = ROOT / "experiments/nimbuslab_policies.json"
 
 
-# louvain con semilla y auditoria: dos copias que arrancan exactamente igual
-def _pipeline(threshold, seed=3):
+# louvain con semilla, con o sin auditoria: dos copias que arrancan exactamente igual
+def _pipeline(threshold, seed=3, audit=True):
     policies = copy.deepcopy(PolicyLoader.from_file(str(POLICIES)))
     builder = GraphBuilder()
     evaluator = CommunityPolicyEvaluator([], {})
     evaluator.run(policies, {})
-    monitor = ModularityMonitor(evaluator, builder, CommunityDetector(seed=seed), threshold=threshold)
+    monitor = ModularityMonitor(evaluator, builder, CommunityDetector(seed=seed), threshold=threshold,
+                                audit_policies=audit)
     monitor._trigger_rebuild = monitor.rebuild_now  # sin hilos
     monitor.rebuild_now()
     return evaluator, builder, monitor
@@ -41,10 +42,12 @@ def _state(evaluator, builder, monitor):
 
 # desactivar/activar contra el metodo anterior (update con events=[] y reenviar la politica completa),
 # con reconstrucciones por umbral de por medio
+# (sin auditoria es como corre el paper 1)
+@pytest.mark.parametrize("audit", [True, False])
 @pytest.mark.parametrize("threshold", [1e9, 0.02])
-def test_activar_y_desactivar_igual_que_vaciar_y_reenviar(threshold, capsys):
-    ev_a, b_a, mon_a = _pipeline(threshold)  # metodos nuevos
-    ev_b, b_b, mon_b = _pipeline(threshold)  # metodo anterior
+def test_activar_y_desactivar_igual_que_vaciar_y_reenviar(threshold, audit, capsys):
+    ev_a, b_a, mon_a = _pipeline(threshold, audit=audit)  # metodos nuevos
+    ev_b, b_b, mon_b = _pipeline(threshold, audit=audit)  # metodo anterior
     assert _state(ev_a, b_a, mon_a) == _state(ev_b, b_b, mon_b)
 
     rng = random.Random(5)
@@ -73,6 +76,8 @@ def test_activar_y_desactivar_igual_que_vaciar_y_reenviar(threshold, capsys):
         assert abs(mon_a.q - _networkx_q(b_a.graph, state_a["partition"])) < TOL
         assert ev_a.validate_integrity() == []
 
+    if not audit:
+        assert not ev_a.excluded
     if threshold < 1:
         assert mon_a.get_stats()["rebuilds"] > 1  # hubo reconstrucciones con politicas inactivas
     # las mismas decisiones en los dos, y ninguna viene de una politica inactiva
@@ -85,8 +90,9 @@ def test_activar_y_desactivar_igual_que_vaciar_y_reenviar(threshold, capsys):
 
 
 # la reconstruccion completa solo usa las activas; las inactivas siguen en el evaluador con sus eventos
-def test_reconstruccion_ignora_inactivas(capsys):
-    evaluator, builder, monitor = _pipeline(1e9)
+@pytest.mark.parametrize("audit", [True, False])
+def test_reconstruccion_ignora_inactivas(audit, capsys):
+    evaluator, builder, monitor = _pipeline(1e9, audit=audit)
     off = sorted(evaluator.policies)[:5]
     for pid in off:
         evaluator.deactivate_policy(pid)

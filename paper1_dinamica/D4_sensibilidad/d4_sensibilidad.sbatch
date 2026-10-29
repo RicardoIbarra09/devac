@@ -6,14 +6,14 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2            # un modulo completo del opteron (dos hilos comparten la FPU)
 #SBATCH --mem=8G
-#SBATCH --time=03:00:00              # con 0.01, politicas_un_evento reconstruye ~10 veces en 1,000 cambios
+#SBATCH --time=03:00:00              # con 0.01, politicas_un_evento reconstruye ~18 veces en 1,000 cambios
 #SBATCH --output=%x_%A_%a.out
 #SBATCH --error=%x_%A_%a.err
 
 set -euo pipefail
 
 # ---------------- Parametros del experimento -------------------
-DATASETS=(politicas_un_evento politicas_w4u_n2000_s1)
+DATASETS=(politicas_w4u_n2000_s1 politicas_un_evento)   # principal y secundario (sin auditoria tiene muchos eventos repetidos)
 THETAS=(0.01 0.02 0.05 0.1)
 REPS="${REPS:-5}"                    # si cambia, ajusta --array (2 x 4 x REPS tareas)
 SEED="${SEED:-1}"                    # la repeticion r usa SEED*1000 + r: mismos cambios para todos los umbrales

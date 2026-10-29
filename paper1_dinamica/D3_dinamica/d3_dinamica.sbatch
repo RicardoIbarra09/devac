@@ -13,9 +13,9 @@
 set -euo pipefail
 
 # ---------------- Parametros del experimento -------------------
-DATASETS=(politicas_un_evento politicas_w4u_n2000_s1)
-# umbral de estres por conjunto; con 0.05, W4-U solo reconstruye 1 o 2 veces por cada 1,000 cambios
-THRESHOLDS=("${THRESHOLD_UN:-0.05}" "${THRESHOLD_W4U:-0.05}")
+DATASETS=(politicas_w4u_n2000_s1 politicas_un_evento)   # principal y secundario (sin auditoria tiene muchos eventos repetidos)
+# umbral de estres por conjunto; con 0.05, W4-U reconstruye ~2 veces en 1,000 desactivaciones
+THRESHOLDS=("${THRESHOLD_W4U:-0.05}" "${THRESHOLD_UN:-0.05}")
 CONFIGS=(deactivation:rebuild deactivation:norebuild mixed:rebuild mixed:norebuild)
 REPS="${REPS:-10}"                   # si cambia, ajusta tambien --array (2 x 4 x REPS tareas)
 SEED="${SEED:-1}"                    # la repeticion r usa SEED*1000 + r (cambios y louvain)

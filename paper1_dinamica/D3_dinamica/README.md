@@ -4,12 +4,13 @@ Archivos: `d3_dinamica.sbatch` (job array de 80 tareas), `resumen_d3.py`, y para
 `repro_d3.sh`, `compara_repro.sbatch` y `compara_repro.py`. El driver es `paper1_dinamica/run_dynamics.py`.
 
 Cada tarea corre una repetición de una configuración:
-2 conjuntos (`politicas_un_evento`, `politicas_w4u_n2000_s1`) × 4 configuraciones
+2 conjuntos (`politicas_w4u_n2000_s1` principal, `politicas_un_evento` secundario) × 4 configuraciones
 (desactivación y mixto, con y sin reconstrucciones) × 10 repeticiones.
 La repetición r usa la semilla `SEED*1000 + r` para su secuencia de cambios y para Louvain (las dos
 en el meta.json); con y sin reconstrucciones, la misma r aplica los mismos cambios.
 
-Q completa con networkx en cada cambio (verificación). Los tiempos se guardan pero no van al paper
+Sin auditoría (`audit: false` en el meta.json): cada reconstrucción es grafo + Louvain. Q completa con
+networkx en cada cambio (verificación). Los tiempos se guardan pero no van al paper
 (`timing_not_reported`); salen de D2.
 
 ## Corrida (amd256)
@@ -26,10 +27,10 @@ cambio (deben coincidir). Resultado: `resultados/d3_reproducibilidad.csv` y el `
 Los crudos van a `resultados/crudo/d3_repro/<JOB>/`.
 
 ## Opciones
-- `THRESHOLD_W4U=0.02 sbatch ...` (o `THRESHOLD_UN`): umbral por conjunto. Con 0.05, W4-U solo
-  reconstruye 1 o 2 veces por cada 1,000 cambios.
+- `THRESHOLD_W4U=0.02 sbatch ...` (o `THRESHOLD_UN`): umbral por conjunto. Sin auditoría, con 0.05
+  W4-U reconstruye ~2 veces en 1,000 desactivaciones y `politicas_un_evento` ~3.
 - `REPS=5 sbatch --array=0-39 ...`: otro número de repeticiones (el array debe ser 2 × 4 × REPS).
-- `EXTRA_ARGS="--no-audit"`: sin auditoría.
+- `EXTRA_ARGS="--audit"`: con auditoría (no es para el Paper 1; la auditoría va en el paper de DEvAC).
 
 ## Duración
 Hasta 32 tareas a la vez en los dos nodos. Una repetición tarda del orden de 20–60 min en el Opteron

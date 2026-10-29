@@ -17,8 +17,8 @@ RAW = RESULTS / "crudo"
 
 META = re.compile(r"^(?P<config>.+?)(_r(?P<rep>\d+))?_meta\.json$")
 # deben coincidir entre repeticiones para poder juntarlas
-SAME = ("script", "commit", "dirty", "policies_sha256", "timing")
-SAME_PARAMS = ("policies", "scenario", "changes", "stress_threshold", "similarity_threshold", "no_audit",
+SAME = ("script", "commit", "dirty", "policies_sha256", "timing", "audit")
+SAME_PARAMS = ("policies", "scenario", "changes", "stress_threshold", "similarity_threshold", "audit",
                "seed", "tag", "networkx_sample", "rebuild_every", "final_rebuild")
 
 

@@ -89,7 +89,8 @@ def test_evento_repetido_no_se_inserta_dos_veces():
         builder.add_events(policies[0])
 
 
-def test_el_monitor_mantiene_el_grafo_al_mutar_el_evaluador(capsys):
+@pytest.mark.parametrize("audit", [True, False])
+def test_el_monitor_mantiene_el_grafo_al_mutar_el_evaluador(audit, capsys):
     pool = PolicyLoader.from_file(str(POLICIES))
     policies = copy.deepcopy(pool[:70])
     builder = GraphBuilder()
@@ -99,7 +100,7 @@ def test_el_monitor_mantiene_el_grafo_al_mutar_el_evaluador(capsys):
     event_to_policy = {e.event_id: p.policy_id for p in policies for e in p.events}
     evaluator = CommunityPolicyEvaluator([], {})
     evaluator.run(policies, detector.map_policies_to_communities(event_to_policy, event_to_community))
-    ModularityMonitor(evaluator, builder, detector, threshold=1e9)
+    ModularityMonitor(evaluator, builder, detector, threshold=1e9, audit_policies=audit)
 
     rng = random.Random(5)
     evaluator.add_policy(_variant(pool[80], pool[3], rng, "nueva"))

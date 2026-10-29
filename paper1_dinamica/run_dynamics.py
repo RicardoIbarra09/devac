@@ -6,7 +6,8 @@
 #   python3 paper1_dinamica/run_dynamics.py --scenario mixed --stress-threshold 1e9 --rebuild-every 50   (periodica)
 #
 # la repeticion r usa la semilla seed*1000 + r para su secuencia de cambios y para louvain; las dos
-# quedan en el meta.json. con y sin reconstrucciones, la misma r aplica los mismos cambios.
+# quedan en el meta.json. sin auditoria por defecto: en el paper 1 una reconstruccion es solo grafo +
+# louvain (la auditoria es consistencia de politicas y va en el paper de devac); --audit la prende. con y sin reconstrucciones, la misma r aplica los mismos cambios.
 # por cada corrida escribe <escenario>_<etiqueta>_rNN.json con una fila por cambio, y
 # <escenario>_<etiqueta>_meta.json (o _rNN_meta.json con --rep) con parametros, entorno y resumen
 
@@ -152,7 +153,7 @@ def run_once(policies: List[dict], plan: List[dict], args, louvain_seed: int,
     monitor = ModularityMonitor(
         evaluator, builder, CommunityDetector(seed=louvain_seed),
         threshold=args.stress_threshold, similarity_threshold=args.similarity_threshold,
-        audit_policies=not args.no_audit, verify_modularity=True,
+        audit_policies=args.audit, verify_modularity=True,
     )
 
     rebuild_times, rebuild_phases = [], []
@@ -275,7 +276,9 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--final-rebuild", action="store_true",
                     help="al terminar, mide una reconstruccion completa mas (no cuenta en rebuilds)")
     ap.add_argument("--similarity-threshold", type=float, default=0.3)
-    ap.add_argument("--no-audit", action="store_true")
+    ap.add_argument("--audit", action=argparse.BooleanOptionalAction, default=False,
+                    help="auditoria de politicas en cada reconstruccion (y segunda pasada de louvain si "
+                         "excluye eventos); el paper 1 corre sin ella")
     ap.add_argument("--seed", type=int, default=1,
                     help="la repeticion r usa seed*1000 + r para sus cambios y para louvain")
     ap.add_argument("--reps", type=int, default=10, help="repeticiones")
@@ -315,6 +318,8 @@ TIMING_COLUMNS = ["t_networkx_s", "t_real_s", "t_incremental_s", "t_graph_s"]
 def base_meta(args, started: datetime, env: dict) -> dict:
     return {
         "policies_sha256": _sha256(ROOT / args.policies),
+        # sin auditoria no hay excluidos ni segunda pasada: la reconstruccion es grafo + louvain
+        "audit": args.audit,
         "started_utc": started.isoformat(timespec="seconds"),
         "finished_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         **env,
