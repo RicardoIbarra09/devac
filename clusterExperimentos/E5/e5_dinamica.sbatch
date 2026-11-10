@@ -34,6 +34,7 @@ IDX="${SLURM_ARRAY_TASK_ID:-0}"
 N="${N_VALUES[$IDX]}"
 
 # Pilotaje: PILOT=1 sbatch e5_dinamica.sbatch  ->  1 repeticion, 100 operaciones por tipo
+# Control del GIL: REPS=3 EXTRA_ARGS="--switch-interval 0.0005" sbatch --array=1 e5_dinamica.sbatch
 if [ "${PILOT:-0}" = "1" ]; then REPS=1; N_OPS=100; fi
 
 OUT="$RESULTS_DIR/e5/${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID:-local}}"
@@ -44,5 +45,5 @@ log "E5 n=$N reps=$REPS ops=$N_OPS modo=$MODE theta=$THETA nodo=$(hostname) comm
 python3 "$E5_DIR/run_e5.py" --n "$N" --reps "$REPS" --n-ops "$N_OPS" \
   --mode "$MODE" --p-mix "$P_MIX" --theta "$THETA" --out-dir "$OUT" $EXTRA_ARGS
 
-cp "$OUT"/e5_*_n"${N}".csv "$OUT"/e5_*_n"${N}"_meta.json "$AGG_DIR/e5/"
+cp "$OUT"/e5_*_n"${N}"{,_gil*}.csv "$OUT"/e5_*_n"${N}"{,_gil*}_meta.json "$AGG_DIR/e5/" 2>/dev/null || true
 log "E5 n=$N terminado -> $OUT"

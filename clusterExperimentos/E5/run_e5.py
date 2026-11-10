@@ -309,9 +309,13 @@ def main():
     ap.add_argument("--pool", type=int, default=400, help="solicitudes que evalua el lector")
     ap.add_argument("--n-rest", type=int, default=20000, help="lecturas en reposo antes del escritor")
     ap.add_argument("--cores", default="", help="nucleos para escritor,lector (por defecto los dos primeros)")
+    ap.add_argument("--switch-interval", type=float, default=None,
+                    help="turno del GIL en segundos (Python usa 0.005); para el control del GIL")
     ap.add_argument("--out-dir", required=True)
     args = ap.parse_args()
 
+    if args.switch_interval is not None:
+        sys.setswitchinterval(args.switch_interval)
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     w4_params = {**W4_DEFAULTS, "mode": args.mode, "p_mix": args.p_mix}
@@ -323,7 +327,8 @@ def main():
         cores = two_physical_cores(sorted(os.sched_getaffinity(0)))
     else:
         cores = [None, None]
-    tag = f"e5_{carga}_n{args.n}"
+    # el control del GIL lleva sufijo para no pisar la corrida normal en los agregados
+    tag = f"e5_{carga}_n{args.n}" + (f"_gil{args.switch_interval:g}" if args.switch_interval is not None else "")
     log = lambda m: print(f"[E5 {carga} n={args.n}] {m}", flush=True)
     log(f"nucleos escritor/lector: {cores}, intervalo de cambio de hilo del GIL: {sys.getswitchinterval()} s")
 
