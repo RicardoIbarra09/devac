@@ -1,26 +1,27 @@
 import pytest
 
-import devac.evaluator as evaluator_module
 from devac.evaluator import CommunityPolicyEvaluator
+from devac.matcher import EventMatcher
 from devac.models import Policy
 from tests.test_deny_priority import REQUEST, make_event
 
 
-# lectura a mitad de una escritura: la primera vez que la escritura arma un indice de rangos
-# (ya cambio la particion, todavia no los indices), se evalua la peticion como si lo hiciera otro hilo
+# lectura a mitad de una escritura: la primera vez que la escritura indexa un valor (ya cambio la
+# particion, todavia no los indices), se evalua la peticion como si lo hiciera otro hilo.
+# evaluate() no llama a expand_value, asi que el gancho no se dispara desde la lectura
 @pytest.fixture
 def read_during_write(monkeypatch):
     seen = []
 
     def arm(ev):
-        real = evaluator_module.IntervalTree
+        real = EventMatcher.expand_value
 
-        def tree():
+        def expand_value(value, attr):
             if not seen:
                 seen.append(ev.evaluate(REQUEST.model_copy(deep=True)))
-            return real()
+            return real(value, attr)
 
-        monkeypatch.setattr(evaluator_module, "IntervalTree", tree)
+        monkeypatch.setattr(EventMatcher, "expand_value", staticmethod(expand_value))
         return seen
 
     return arm

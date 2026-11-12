@@ -61,7 +61,7 @@ def test_las_escrituras_no_modifican_estructuras_publicadas(capsys):
             "events_by_comm": (ev.events_by_comm, {c: (l, list(l)) for c, l in ev.events_by_comm.items()}),
             "freq": (ev.freq, dict(ev.freq)),
             "value_to_comms": (ev.value_to_comms,
-                               {a: {v: (s, set(s)) for v, s in idx.items()} for a, idx in ev.value_to_comms.items()}),
+                               {a: {v: (s, dict(s)) for v, s in idx.items()} for a, idx in ev.value_to_comms.items()}),
         }
 
     def unchanged(before):

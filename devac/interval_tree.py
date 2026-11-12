@@ -18,12 +18,12 @@ def _is_time_format(value: str) -> bool:
 class _Node:
     __slots__ = ("start", "end", "community_id", "policy_id", "priority", "left", "right", "max_end")
 
-    def __init__(self, start: int, end: int, community_id: str, policy_id: str):
+    def __init__(self, start: int, end: int, community_id: str, policy_id: str, priority: float):
         self.start = start
         self.end = end
         self.community_id = community_id
         self.policy_id = policy_id
-        self.priority = random.random()  # prioridad aleatoria del treap
+        self.priority = priority  # prioridad aleatoria del treap
         self.left: Optional["_Node"] = None
         self.right: Optional["_Node"] = None
         self.max_end = end  # mayor fin del subarbol, sirve para podar
@@ -99,9 +99,14 @@ def _inorder(node: Optional[_Node], out: List[_Node]) -> None:
 
 
 class IntervalTree:
+    SEED = 0
+
     def __init__(self):
         self._root: Optional[_Node] = None
         self._count = 0
+        # generador propio con semilla fija: el arbol no consume el random global (louvain lo usa en
+        # los experimentos que fijan random.seed) y su forma solo depende de lo que se inserta
+        self._rng = random.Random(self.SEED)
 
     def insert(self, start_hhmm: str, end_hhmm: str, community_id: str, policy_id: str) -> bool:
         start = _to_minutes(start_hhmm)
@@ -113,7 +118,7 @@ class IntervalTree:
             self.insert_raw(start, 1439, community_id, policy_id)
             self.insert_raw(0, end, community_id, policy_id)
             return True
-        self._root = _insert(self._root, _Node(start, end, community_id, policy_id))
+        self._root = _insert(self._root, _Node(start, end, community_id, policy_id, self._rng.random()))
         self._count += 1
         return True
 
@@ -124,12 +129,32 @@ class IntervalTree:
 
         self._root = None
         self._count = 0
-        random.shuffle(kept)  # reinsertar en orden aleatorio mantiene el arbol balanceado
+        self._rng.shuffle(kept)  # reinsertar en orden aleatorio mantiene el arbol balanceado
         for n in kept:
             self.insert_raw(n.start, n.end, n.community_id, n.policy_id)
 
+    # arbol nuevo con los intervalos de este sin los de una comunidad, mas los dados (inicio, fin, id).
+    # este no se toca (los lectores pueden estar usandolo). la forma del treap depende de las
+    # prioridades, no del orden de insercion, asi que no hace falta revolver
+    def replace_community(self, community_id, intervals) -> "IntervalTree":
+        nodes: List[_Node] = []
+        _inorder(self._root, nodes)
+        tree = IntervalTree()
+        for n in nodes:
+            if n.community_id != community_id:
+                tree.insert_raw(n.start, n.end, n.community_id, n.policy_id)
+        for start, end, item_id in intervals:
+            tree.insert(start, end, community_id, item_id)
+        return tree
+
+    # (inicio, fin, comunidad, id) ordenados, para comparar arboles
+    def intervals(self) -> List[Tuple[int, int, str, str]]:
+        nodes: List[_Node] = []
+        _inorder(self._root, nodes)
+        return sorted((n.start, n.end, str(n.community_id), n.policy_id) for n in nodes)
+
     def insert_raw(self, start: int, end: int, community_id: str, policy_id: str) -> None:
-        self._root = _insert(self._root, _Node(start, end, community_id, policy_id))
+        self._root = _insert(self._root, _Node(start, end, community_id, policy_id, self._rng.random()))
         self._count += 1
 
     def query(self, time_hhmm: str) -> Set[str]:

@@ -1,5 +1,4 @@
 from typing import List, Dict, Set, Tuple, Callable, Optional
-from collections import defaultdict
 from dataclasses import dataclass, replace
 from devac.models import Policy, AccessRequest, Event
 from devac.matcher import EventMatcher
@@ -23,9 +22,10 @@ class _State:
     freq: Dict[object, Dict[str, Dict[str, float]]]
     events_by_comm: Dict[object, List[Event]]
     event_policy_effect: Dict[str, str]  # event_id -> allow/deny de su politica
-    # attr -> valor -> comunidades que lo tienen; _deny igual pero solo con eventos deny
-    value_to_comms: Dict[str, Dict[str, Set[object]]]
-    value_to_comms_deny: Dict[str, Dict[str, Set[object]]]
+    # attr -> valor -> {comunidad: eventos de la comunidad con ese valor}; _deny igual pero solo con
+    # eventos deny. una comunidad sale de un valor cuando su conteo llega a 0
+    value_to_comms: Dict[str, Dict[str, Dict[object, int]]]
+    value_to_comms_deny: Dict[str, Dict[str, Dict[object, int]]]
     interval_tree: IntervalTree  # para rangos HH:MM
     interval_tree_deny: IntervalTree
     # eventos que la auditoria encontro cubiertos por otro del mismo efecto:
@@ -33,6 +33,51 @@ class _State:
     # indexan ni se comparan mientras la que los cubre no cambie
     excluded: Dict[str, Tuple[str, str]]
     attribute_weights: Dict[str, float]
+    # lo que aporto cada comunidad a los indices globales, para restarlo cuando cambie
+    contributions: Dict[object, "_Contribution"]
+
+
+# conteos attr -> valor -> eventos y rangos (inicio, fin, event_id) de una comunidad
+@dataclass(frozen=True, slots=True)
+class _Contribution:
+    counts: Dict[str, Dict[str, int]]
+    deny_counts: Dict[str, Dict[str, int]]
+    ranges: Tuple[Tuple[str, str, str], ...]
+    deny_ranges: Tuple[Tuple[str, str, str], ...]
+
+
+_NO_CONTRIBUTION = _Contribution({}, {}, (), ())
+
+
+# indice nuevo con los conteos de una comunidad cambiados de old a new. index no se toca: solo se
+# copian el dict de cada atributo que cambia y el de cada valor que cambia
+def _apply_counts(index, community_id, old: Dict[str, Dict[str, int]], new: Dict[str, Dict[str, int]]):
+    result = None
+    for attr in set(old) | set(new):
+        old_vals, new_vals = old.get(attr, {}), new.get(attr, {})
+        if old_vals == new_vals:
+            continue
+        values = None
+        for val in set(old_vals) | set(new_vals):
+            count = new_vals.get(val, 0)
+            if count == old_vals.get(val, 0):
+                continue
+            if values is None:
+                values = dict(index.get(attr, {}))
+            comms = dict(values.get(val, {}))
+            if count:
+                comms[community_id] = count
+            else:
+                comms.pop(community_id, None)
+            if comms:
+                values[val] = comms
+            else:
+                values.pop(val, None)
+        if values is not None:
+            if result is None:
+                result = dict(index)
+            result[attr] = values
+    return index if result is None else result
 
 
 def _read_only(name: str) -> property:
@@ -65,12 +110,13 @@ class CommunityPolicyEvaluator:
             freq={},
             events_by_comm={},
             event_policy_effect={},
-            value_to_comms={attr: defaultdict(set) for attr in self.ATTRS},
-            value_to_comms_deny={attr: defaultdict(set) for attr in self.ATTRS},
+            value_to_comms={attr: {} for attr in self.ATTRS},
+            value_to_comms_deny={attr: {} for attr in self.ATTRS},
             interval_tree=IntervalTree(),
             interval_tree_deny=IntervalTree(),
             excluded={},
             attribute_weights={},
+            contributions={},
         )
         # el estado que va armando la escritura en curso, para que most_similar_community vea lo que
         # ya cambio (como antes, cuando cada paso se publicaba). evaluate() nunca lo lee
@@ -115,97 +161,20 @@ class CommunityPolicyEvaluator:
         # los lectores ven la particion vieja con sus indices o la nueva con los suyos, nunca mezcladas
         self._state = self._rebuild_all_indices(st)
 
-    def _rebuild_all_indices(self, st: _State) -> _State:
-        # se arma todo en estructuras nuevas
-        new_value_to_comms = {attr: defaultdict(set) for attr in self.ATTRS}
-        new_value_to_comms_deny = {attr: defaultdict(set) for attr in self.ATTRS}
-        new_freq = {comm: {attr: defaultdict(int) for attr in self.ATTRS} for comm in st.policies_by_community}
-        new_events_by_comm = {comm: [] for comm in st.policies_by_community}
-        new_event_policy_effect: Dict[str, str] = {}
-        new_interval_tree = IntervalTree()
-        new_interval_tree_deny = IntervalTree()
-
-        for comm, pids in st.policies_by_community.items():
-            events = []
-
-            for pid in pids:
-                policy = st.policies.get(pid)
-                if not policy or not policy.active:
-                    continue
-                is_deny = policy.effect == "deny"
-
-                # normaliza a minusculas antes de indexar
-                for e in policy.events:
-                    if isinstance(e.subject.value, str): e.subject.value = e.subject.value.strip().lower()
-                    if isinstance(e.asset.value,   str): e.asset.value   = e.asset.value.strip().lower()
-                    if isinstance(e.space.value,   str): e.space.value   = e.space.value.strip().lower()
-                    if isinstance(e.time.value,    str): e.time.value    = e.time.value.strip().lower()
-                    if isinstance(e.action.value,  str): e.action.value  = e.action.value.strip().lower()
-                    if e.event_id in st.excluded:
-                        continue
-
-                    events.append(e)
-                    new_event_policy_effect[e.event_id] = policy.effect
-
-                    def _idx(attr_key, val):
-                        for expanded in EventMatcher.expand_value(val, attr_key):
-                            new_value_to_comms[attr_key][expanded].add(comm)
-                            new_freq[comm][attr_key][expanded] += 1
-                            if is_deny:
-                                new_value_to_comms_deny[attr_key][expanded].add(comm)
-
-                    _idx("rol",          e.subject.value)
-                    _idx("recurso",      e.asset.value)
-                    _idx("ubicacion",    e.space.value)
-                    _idx("accion",       e.action.value)
-
-                    time_val = e.time.value
-                    if isinstance(time_val, dict) and "range" in time_val:
-                        bounds = time_val["range"]
-                        if len(bounds) == 2:
-                            new_interval_tree.insert(bounds[0], bounds[1], comm, e.event_id)
-                            if is_deny:
-                                new_interval_tree_deny.insert(bounds[0], bounds[1], comm, e.event_id)
-                    else:
-                        _idx("rango_horario", time_val)
-
-            new_events_by_comm[comm] = events
-
-        for comm, attrs in new_freq.items():
-            total_events = float(len(new_events_by_comm[comm])) or 1.0
-            for attr, values in attrs.items():
-                for val in values:
-                    values[val] /= total_events
-
-        return replace(
-            st,
-            events_by_comm=new_events_by_comm,
-            freq=new_freq,
-            value_to_comms=new_value_to_comms,
-            value_to_comms_deny=new_value_to_comms_deny,
-            event_policy_effect=new_event_policy_effect,
-            interval_tree=new_interval_tree,
-            interval_tree_deny=new_interval_tree_deny,
-        )
-
-    # reconstruye una sola comunidad tras un cambio; devuelve un estado nuevo, st no se toca
-    def _rebuild_community_indices(self, st: _State, community_id: str) -> _State:
-        if community_id not in st.policies_by_community:
-            return st
-
-        pids = st.policies_by_community[community_id]
-
-        new_comm_freq = {attr: defaultdict(int) for attr in self.ATTRS}
+    # recorre las politicas de una comunidad: sus eventos indexables, su efecto y lo que aportan
+    # a los indices. los eventos se normalizan a minusculas antes de indexar
+    def _collect_community(self, st: _State, community_id) -> Tuple[List[Event], Dict[str, str], "_Contribution"]:
         events = []
+        effects: Dict[str, str] = {}
+        counts = {attr: {} for attr in self.ATTRS}
+        deny_counts = {attr: {} for attr in self.ATTRS}
+        ranges, deny_ranges = [], []
 
-        # quita los eventos que tenia antes la comunidad
-        old_ids = {e.event_id for e in st.events_by_comm.get(community_id, [])}
-        event_policy_effect = {eid: eff for eid, eff in st.event_policy_effect.items() if eid not in old_ids}
-
-        for pid in pids:
+        for pid in st.policies_by_community.get(community_id, []):
             policy = st.policies.get(pid)
             if not policy or not policy.active:
                 continue
+            is_deny = policy.effect == "deny"
 
             for e in policy.events:
                 if isinstance(e.subject.value, str): e.subject.value = e.subject.value.strip().lower()
@@ -217,72 +186,108 @@ class CommunityPolicyEvaluator:
                     continue
 
                 events.append(e)
-                event_policy_effect[e.event_id] = policy.effect
+                effects[e.event_id] = policy.effect
 
-                def _freq(attr_key, val):
+                def _idx(attr_key, val):
                     for expanded in EventMatcher.expand_value(val, attr_key):
-                        new_comm_freq[attr_key][expanded] += 1
+                        counts[attr_key][expanded] = counts[attr_key].get(expanded, 0) + 1
+                        if is_deny:
+                            deny_counts[attr_key][expanded] = deny_counts[attr_key].get(expanded, 0) + 1
 
-                _freq("rol",     e.subject.value)
-                _freq("recurso", e.asset.value)
-                _freq("ubicacion", e.space.value)
-                _freq("accion",  e.action.value)
+                _idx("rol",          e.subject.value)
+                _idx("recurso",      e.asset.value)
+                _idx("ubicacion",    e.space.value)
+                _idx("accion",       e.action.value)
 
                 time_val = e.time.value
                 if isinstance(time_val, dict) and "range" in time_val:
                     bounds = time_val["range"]
                     if len(bounds) == 2:
-                        pass
+                        ranges.append((bounds[0], bounds[1], e.event_id))
+                        if is_deny:
+                            deny_ranges.append((bounds[0], bounds[1], e.event_id))
                 else:
-                    _freq("rango_horario", time_val)
+                    _idx("rango_horario", time_val)
 
-        total_events = float(len(events)) or 1.0
-        for attr, values in new_comm_freq.items():
-            for val in values:
-                values[val] /= total_events
+        return events, effects, _Contribution(counts, deny_counts, tuple(ranges), tuple(deny_ranges))
 
-        events_by_comm = {**st.events_by_comm, community_id: events}
-        freq = {**st.freq, community_id: new_comm_freq}
+    # frecuencia relativa de cada valor en la comunidad
+    def _freq_from(self, counts: Dict[str, Dict[str, int]], n_events: int) -> Dict[str, Dict[str, float]]:
+        total_events = float(n_events) or 1.0
+        return {attr: {val: c / total_events for val, c in counts[attr].items()} for attr in self.ATTRS}
 
-        new_value_to_comms = {attr: defaultdict(set) for attr in self.ATTRS}
-        new_value_to_comms_deny = {attr: defaultdict(set) for attr in self.ATTRS}
-        new_interval_tree  = IntervalTree()
+    def _rebuild_all_indices(self, st: _State) -> _State:
+        # se arma todo en estructuras nuevas
+        new_value_to_comms = {attr: {} for attr in self.ATTRS}
+        new_value_to_comms_deny = {attr: {} for attr in self.ATTRS}
+        new_freq = {}
+        new_events_by_comm = {}
+        new_event_policy_effect: Dict[str, str] = {}
+        new_contributions = {}
+        new_interval_tree = IntervalTree()
         new_interval_tree_deny = IntervalTree()
 
-        # los indices globales si se rehacen completos
-        for comm, comm_events in events_by_comm.items():
-            for e in comm_events:
-                is_deny = event_policy_effect.get(e.event_id) == "deny"
-
-                def _vidx(attr_key, val):
-                    for expanded in EventMatcher.expand_value(val, attr_key):
-                        new_value_to_comms[attr_key][expanded].add(comm)
-                        if is_deny:
-                            new_value_to_comms_deny[attr_key][expanded].add(comm)
-                _vidx("rol",      e.subject.value)
-                _vidx("recurso",  e.asset.value)
-                _vidx("ubicacion",e.space.value)
-                _vidx("accion",   e.action.value)
-
-                time_val = e.time.value
-                if isinstance(time_val, dict) and "range" in time_val:
-                    bounds = time_val["range"]
-                    if len(bounds) == 2:
-                        new_interval_tree.insert(bounds[0], bounds[1], comm, e.event_id)
-                        if is_deny:
-                            new_interval_tree_deny.insert(bounds[0], bounds[1], comm, e.event_id)
-                else:
-                    _vidx("rango_horario", time_val)
+        for comm in st.policies_by_community:
+            events, effects, contrib = self._collect_community(st, comm)
+            new_events_by_comm[comm] = events
+            new_event_policy_effect.update(effects)
+            new_contributions[comm] = contrib
+            new_freq[comm] = self._freq_from(contrib.counts, len(events))
+            for index, counts in ((new_value_to_comms, contrib.counts), (new_value_to_comms_deny, contrib.deny_counts)):
+                for attr, values in counts.items():
+                    for val, c in values.items():
+                        index[attr].setdefault(val, {})[comm] = c
+            for start, end, eid in contrib.ranges:
+                new_interval_tree.insert(start, end, comm, eid)
+            for start, end, eid in contrib.deny_ranges:
+                new_interval_tree_deny.insert(start, end, comm, eid)
 
         return replace(
             st,
-            events_by_comm=events_by_comm,
-            freq=freq,
-            event_policy_effect=event_policy_effect,
+            events_by_comm=new_events_by_comm,
+            freq=new_freq,
             value_to_comms=new_value_to_comms,
             value_to_comms_deny=new_value_to_comms_deny,
+            event_policy_effect=new_event_policy_effect,
             interval_tree=new_interval_tree,
             interval_tree_deny=new_interval_tree_deny,
+            contributions=new_contributions,
+        )
+
+    # reconstruye una sola comunidad tras un cambio; devuelve un estado nuevo, st no se toca.
+    # los indices globales no se rehacen: se restan los conteos viejos de la comunidad y se suman los
+    # nuevos, copiando solo las entradas que cambian
+    def _rebuild_community_indices(self, st: _State, community_id) -> _State:
+        if community_id not in st.policies_by_community:
+            return st
+
+        old = st.contributions.get(community_id, _NO_CONTRIBUTION)
+        events, effects, new = self._collect_community(st, community_id)
+
+        # quita los eventos que tenia antes la comunidad
+        event_policy_effect = dict(st.event_policy_effect)
+        for e in st.events_by_comm.get(community_id, []):
+            event_policy_effect.pop(e.event_id, None)
+        event_policy_effect.update(effects)
+
+        # los arboles solo se rehacen si la comunidad tenia o tiene rangos horarios
+        interval_tree = st.interval_tree
+        if old.ranges or new.ranges:
+            interval_tree = interval_tree.replace_community(community_id, new.ranges)
+        interval_tree_deny = st.interval_tree_deny
+        if old.deny_ranges or new.deny_ranges:
+            interval_tree_deny = interval_tree_deny.replace_community(community_id, new.deny_ranges)
+
+        return replace(
+            st,
+            events_by_comm={**st.events_by_comm, community_id: events},
+            freq={**st.freq, community_id: self._freq_from(new.counts, len(events))},
+            event_policy_effect=event_policy_effect,
+            value_to_comms=_apply_counts(st.value_to_comms, community_id, old.counts, new.counts),
+            value_to_comms_deny=_apply_counts(st.value_to_comms_deny, community_id, old.deny_counts, new.deny_counts),
+            interval_tree=interval_tree,
+            interval_tree_deny=interval_tree_deny,
+            contributions={**st.contributions, community_id: new},
         )
 
     # agrega en caliente, sin reconstruir el grafo
@@ -321,7 +326,11 @@ class CommunityPolicyEvaluator:
             self._draft = None
 
     def assign_policy_to_community(self, policy_id: str, community_id: str):
-        self._state = self._assign(self._state, policy_id, community_id)
+        st = self._state
+        source = st.policy_community.get(policy_id)
+        if source is not None and source != community_id:
+            st = self._unassign(st, policy_id)  # como move: sale de su comunidad anterior
+        self._state = self._assign(st, policy_id, community_id)
         policy = self.policies.get(policy_id)
         self._notify_policy_change(policy, policy)
 
@@ -544,7 +553,7 @@ class CommunityPolicyEvaluator:
     def _candidate_communities(
         self,
         request: AccessRequest,
-        value_index: Dict[str, Dict[str, Set[str]]] = None,
+        value_index: Dict[str, Dict[str, Dict[str, int]]] = None,
         tree_index: IntervalTree = None,
     ) -> Set[str]:
         # por defecto los indices generales, en evaluate tambien se usa con los de deny
@@ -566,23 +575,23 @@ class CommunityPolicyEvaluator:
 
         for attr, val in vals.items():
             attr_index = value_index.get(attr, {})
-            exact    = attr_index.get(val, set())
-            wildcard = attr_index.get("*", set())
-            combined = exact | wildcard  # valor exacto o comodin
+            exact    = attr_index.get(val, {})
+            wildcard = attr_index.get("*", {})
+            combined = exact.keys() | wildcard.keys()  # valor exacto o comodin
             # ningun evento acepta este valor
             if not combined:
                 return set()
             candidate_sets.append(combined)
 
         rh_index   = value_index.get("rango_horario", {})
-        rh_exact   = rh_index.get(time_val, set())
-        rh_wildcard= rh_index.get("*", set())
+        rh_exact   = rh_index.get(time_val, {})
+        rh_wildcard= rh_index.get("*", {})
 
         if _is_time_format(time_val):
             rh_range = tree_index.query(time_val)  # rangos horarios que contienen la hora
-            rh_combined = rh_exact | rh_wildcard | rh_range
+            rh_combined = rh_exact.keys() | rh_wildcard.keys() | rh_range
         else:
-            rh_combined = rh_exact | rh_wildcard
+            rh_combined = rh_exact.keys() | rh_wildcard.keys()
 
         if not rh_combined:
             return set()

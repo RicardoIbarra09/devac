@@ -78,3 +78,19 @@ def test_audit_sin_traslape_cuando_estan_en_horas_distintas():
     a = _as_set_spec({"range": ["23:00", "06:00"]})
     b = _as_set_spec({"range": ["07:00", "22:00"]})
     assert _intersects(a, b) is False
+
+
+# el arbol usa su propio generador: no mueve el random global (louvain lo usa en los experimentos)
+def test_interval_tree_no_consume_el_random_global():
+    import random
+
+    random.seed(7)
+    expected = random.random()
+    random.seed(7)
+    tree = IntervalTree()
+    for i in range(50):
+        tree.insert("08:00", "22:00" if i % 2 else "02:00", f"c{i % 3}", f"E{i}")
+    tree.remove_policy("E3")
+    tree = tree.replace_community("c0", [("09:00", "10:00", "N1")])
+    assert random.random() == expected
+    assert tree.query("09:30") == {"c0", "c1", "c2"}
