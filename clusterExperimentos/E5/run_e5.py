@@ -251,6 +251,16 @@ def run_concurrent(base, ops, theta, seed, pool, D, cores, n_rest):
         tw.join()
         tr.join()
 
+    # reposo final: mismo lector, sin escritor, sobre el estado que dejaron las operaciones.
+    # separa lo que se debe a la concurrencia de lo que se debe a como quedo el estado
+    rest_end = np.empty(n_rest, dtype=np.int64)
+    gc.collect()
+    for k in range(n_rest):
+        r = reqs[k % len(reqs)]
+        t0 = clock()
+        ev.evaluate(r)
+        rest_end[k] = clock() - t0
+
     starts, ends = op_t[:, 0], op_t[:, 1]
     inconsistent, during_lat, n_during = 0, [], 0
     examples = []
@@ -272,7 +282,7 @@ def run_concurrent(base, ops, theta, seed, pool, D, cores, n_rest):
 
     final = sum(ev.evaluate(r)["result"] == ("allow" if D[-1, i] else "deny") for i, r in enumerate(reqs))
     return {
-        "rest_ns": rest, "during_ns": np.array(during_lat, dtype=np.int64),
+        "rest_ns": rest, "rest_end_ns": rest_end, "during_ns": np.array(during_lat, dtype=np.int64),
         "op_ms": (ends - starts) / 1e6, "n_reads": len(reads), "n_reads_overlap": n_during,
         "inconsistent": inconsistent, "examples": examples,
         "reader_errors": dict(r_err), "writer_errors": dict(w_err),
@@ -347,14 +357,20 @@ def main():
 
             rest_us, during_us = b["rest_ns"] / 1000.0, b["during_ns"] / 1000.0
             p95_rest, p95_during = pct(rest_us, 95), pct(during_us, 95)
+            p95_rest_end = pct(b["rest_end_ns"] / 1000.0, 95)
+            p95_rest_worst = max(p95_rest, p95_rest_end)
             row = {
                 "carga": carga, "n": args.n, "rep": rep, "op": kind, "n_ops": len(ops),
                 "op_p50_ms": pct(tot, 50), "op_p95_ms": pct(tot, 95), "op_mean_ms": round(float(tot.mean()), 4),
                 "monitor_p50_ms": pct(mon_ms, 50), "evaluador_p50_ms": pct(tot - mon_ms, 50),
                 "op_concurrente_p50_ms": pct(b["op_ms"], 50), "op_concurrente_p95_ms": pct(b["op_ms"], 95),
                 "lectura_reposo_p50_us": pct(rest_us, 50), "lectura_reposo_p95_us": p95_rest,
+                "lectura_reposo_final_p95_us": p95_rest_end,
                 "lectura_cambios_p50_us": pct(during_us, 50), "lectura_cambios_p95_us": p95_during,
+                # razon contra el reposo inicial (la del plan) y contra el peor de los dos reposos
                 "razon_p95": round(p95_during / p95_rest, 3) if p95_rest and p95_during != "" else "",
+                "razon_p95_corregida": round(p95_during / p95_rest_worst, 3) if p95_rest_worst and p95_during != "" else "",
+                "deriva_estado": round(p95_rest_end / p95_rest, 3) if p95_rest else "",
                 "lecturas": b["n_reads"], "lecturas_traslapadas": b["n_reads_overlap"],
                 "inconsistentes": b["inconsistent"],
                 "errores_lector": sum(b["reader_errors"].values()),
@@ -366,7 +382,7 @@ def main():
                             "errores_escritor": {**b["writer_errors"], **{f"secuencial:{k}": v for k, v in a_err.items()}},
                             "ejemplos_inconsistentes": b["examples"], "t_referencia_s": round(t_ref, 2)})
             log(f"rep {rep + 1}/{args.reps} {kind}: op p50={row['op_p50_ms']} ms p95={row['op_p95_ms']} ms | "
-                f"lectura p95 reposo={p95_rest} us, con cambios={p95_during} us | "
+                f"lectura p95 reposo={p95_rest} us, reposo final={p95_rest_end} us, con cambios={p95_during} us | "
                 f"{row['lecturas_traslapadas']} lecturas traslapadas, inconsistentes={row['inconsistentes']}, "
                 f"errores lector={row['errores_lector']} escritor={row['errores_escritor']}")
 
@@ -383,6 +399,9 @@ def main():
             "monitor_p50_ms": st.median(x["monitor_p50_ms"] for x in r),
             "evaluador_p50_ms": st.median(x["evaluador_p50_ms"] for x in r),
             "lectura_reposo_p95_us": st.median(x["lectura_reposo_p95_us"] for x in r),
+            "lectura_reposo_final_p95_us": st.median(x["lectura_reposo_final_p95_us"] for x in r),
+            "deriva_estado": st.median(x["deriva_estado"] for x in r),
+            "razon_p95_corregida": st.median(x["razon_p95_corregida"] for x in r),
             "lectura_cambios_p95_us": st.median(x["lectura_cambios_p95_us"] for x in r),
             "razon_p95": st.median(x["razon_p95"] for x in r),
             "lecturas_traslapadas": sum(x["lecturas_traslapadas"] for x in r),
