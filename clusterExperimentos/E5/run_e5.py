@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-E5: cambios de politicas en ejecucion (add, remove, update) y lecturas concurrentes.
+E5: cambios de politicas en ejecucion (add, remove, update, toggle) y lecturas concurrentes.
+
+toggle = desactivar n_ops/2 politicas al azar y despues activar esas mismas (suspender y devolver).
 
 Por repeticion y tipo de operacion se arma el motor como lo arma la API (evaluador + monitor de
 modularidad, sin reconstrucciones automaticas) y se aplican n_ops operaciones de ese tipo:
@@ -46,7 +48,7 @@ from gen_w4 import DEFAULTS as W4_DEFAULTS, MODES as W4_MODES, generate_w4, vari
 from devac import CommunityDetector, CommunityPolicyEvaluator, GraphBuilder, Policy  # noqa: E402
 from devac.monitor import ModularityMonitor  # noqa: E402
 
-OPS = ("add", "remove", "update")
+OPS = ("add", "remove", "update", "toggle")
 clock = time.perf_counter_ns
 
 
@@ -86,6 +88,10 @@ def apply_op(ev, op):
         ev.add_policy(copy.deepcopy(new))
     elif kind == "remove":
         ev.remove_policy(old.policy_id)
+    elif kind == "deactivate":
+        ev.deactivate_policy(old.policy_id)
+    elif kind == "activate":
+        ev.activate_policy(old.policy_id)
     else:
         ev.update_policy(copy.deepcopy(new))
 
@@ -104,6 +110,12 @@ def make_ops(kind, base, rep, n_ops, w4_params):
                 e["event_id"] = f"{pid}-e{j + 1}"
             ops.append(("add", None, Policy.model_validate(p)))
         return ops
+    if kind == "toggle":
+        # suspender y devolver: primero se desactivan todas, luego se activan en el mismo orden
+        ids = rng.sample(sorted(by_id), n_ops // 2)
+        off = {pid: by_id[pid].model_copy(update={"active": False}) for pid in ids}
+        return ([("deactivate", by_id[pid], off[pid]) for pid in ids]
+                + [("activate", off[pid], by_id[pid]) for pid in ids])
     ids = rng.sample(sorted(by_id), n_ops)
     if kind == "remove":
         return [("remove", by_id[pid], None) for pid in ids]
@@ -377,6 +389,9 @@ def main():
                 "errores_escritor": sum(b["writer_errors"].values()) + sum(a_err.values()),
                 "final_ok_secuencial_pct": round(a_final, 3), "final_ok_concurrente_pct": round(b["final_ok_pct"], 3),
             }
+            if kind == "toggle":  # costo de cada mitad por separado
+                h = len(ops) // 2
+                row["desactivar_p50_ms"], row["activar_p50_ms"] = pct(tot[:h], 50), pct(tot[h:], 50)
             rows.append(row)
             details.append({"rep": rep, "op": kind, "errores_lector": b["reader_errors"],
                             "errores_escritor": {**b["writer_errors"], **{f"secuencial:{k}": v for k, v in a_err.items()}},
@@ -387,7 +402,7 @@ def main():
                 f"errores lector={row['errores_lector']} escritor={row['errores_escritor']}")
 
     with open(out_dir / f"{tag}.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w = csv.DictWriter(f, fieldnames=list(dict.fromkeys(k for r in rows for k in r)), restval="")
         w.writeheader()
         w.writerows(rows)
 
@@ -410,6 +425,9 @@ def main():
             "errores_escritor": sum(x["errores_escritor"] for x in r),
             "final_ok_min_pct": min(min(x["final_ok_secuencial_pct"], x["final_ok_concurrente_pct"]) for x in r),
         }
+        if kind == "toggle":
+            for k in ("desactivar_p50_ms", "activar_p50_ms"):
+                resumen[kind][k] = st.median(x[k] for x in r)
     meta = {
         "experimento": "E5", "carga": carga, "n_eventos": args.n, "repeticiones": args.reps,
         "n_ops": args.n_ops, "theta": args.theta, "pool": args.pool, "n_reposo": args.n_rest,

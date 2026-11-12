@@ -39,6 +39,12 @@ for carga in sorted({m["grupo"] for m in metas}):
             print(f"  n={m['n_eventos']} rep {d['rep']} {d['op']}: errores lector={d['errores_lector']} "
                   f"escritor={d['errores_escritor']} ejemplos={d['ejemplos_inconsistentes'][:2]}")
 
+for m in metas:  # toggle: costo de desactivar y de activar por separado
+    t = m["resumen"].get("toggle")
+    if t and "desactivar_p50_ms" in t:
+        print(f"\n{m['grupo']}, n={m['n_eventos']}: toggle = desactivar p50 {t['desactivar_p50_ms']:.2f} ms, "
+              f"activar p50 {t['activar_p50_ms']:.2f} ms")
+
 print("\nCriterio del plan: 0 inconsistentes, 0 errores y razon p95 (cambios / reposo) de 2 o menos.")
 print("'deriva' = reposo final / reposo inicial: cuanto cambia la lectura solo por el estado que dejan las")
 print("operaciones, sin concurrencia. 'corregida' = cambios / el peor de los dos reposos: lo que se debe a la")
