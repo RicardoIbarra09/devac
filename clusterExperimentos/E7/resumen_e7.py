@@ -7,7 +7,7 @@ from pathlib import Path
 
 dirs = [Path(d) for d in (sys.argv[1:] or ["."])]
 metas = sorted((json.loads(p.read_text()) for d in dirs for p in d.glob("e7_*_meta.json")),
-               key=lambda m: (m["operacion"], m["n_eventos"]))
+               key=lambda m: (m["operacion"], m["n_eventos"], m.get("colocacion", ""), m.get("replicas", "")))
 if not metas:
     sys.exit(f"No hay e7_*_meta.json en {', '.join(map(str, dirs))}")
 
@@ -21,6 +21,8 @@ for m in metas:
           f"calentamiento {m['calentamiento_s']:g} s, {m['repeticiones']} rep., {m['nucleos_fisicos']} nucleos fisicos / "
           f"{m.get('cpus_logicos', '?')} logicos "
           f"(mediana; lecturas en us)")
+    print(f"colocacion={m.get('colocacion', 'compact')}, replicas={m.get('replicas', 'fork')}; procesos por socket: "
+          + ", ".join(f"K={k} {r.get('procesos_por_socket', '?')}" for k, r in sorted(m['resumen'].items(), key=lambda kv: int(kv[0]))))
     h = (f"{'K':>3} {'ubicacion':>14} {'lect/s reposo':>13} {'acel.':>6} {'lect/s cambios':>14} {'p95 reposo':>10} {'p95 cambios':>11} "
          f"{'razon':>6} {'p95 reac.':>9} {'aplicar ms':>10} {'reac. replica ms':>16} {'propag p95 ms':>13} "
          f"{'ventana max ms':>14} {'reac. prim s':>12} {'cambios':>7} {'mem MB':>7} {'inconsist.':>10} {'err':>4} {'final ok':>8}")

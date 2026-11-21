@@ -53,11 +53,21 @@ from devac import Policy  # noqa: E402
 
 clock = time.perf_counter_ns  # CLOCK_MONOTONIC: comparable entre procesos del mismo nodo
 CTX = mp.get_context("fork")
+SPAWN = mp.get_context("spawn")
 
 
 # ---------------------------------------------------------------- nucleos
-def cpu_order(allowed):
+def cpu_package(c):
+    try:
+        return open(f"/sys/devices/system/cpu/cpu{c}/topology/physical_package_id").read().strip()
+    except OSError:
+        return "0"
+
+
+def cpu_order(allowed, placement="compact"):
     """Primero un CPU logico por nucleo fisico; despues los hermanos de hyperthreading.
+    compact: los nucleos en orden (llena un procesador antes de pasar al otro).
+    spread: alterna entre procesadores (sockets), para repartir la cache y la memoria de cada uno.
     Devuelve (orden, numero de nucleos fisicos)."""
     seen, first, rest = set(), [], []
     for c in sorted(allowed):
@@ -68,6 +78,12 @@ def cpu_order(allowed):
             key = (None, c)
         (rest if key in seen else first).append(c)
         seen.add(key)
+    if placement == "spread":
+        by_pkg = {}
+        for c in first:
+            by_pkg.setdefault(cpu_package(c), []).append(c)
+        queues = [by_pkg[k] for k in sorted(by_pkg)]
+        first = [q[i] for i in range(max(map(len, queues))) for q in queues if i < len(q)]
     return first + rest, len(first)
 
 
@@ -115,10 +131,22 @@ def replica_apply(ev, msg):
         ev.run(list(ev.policies.values()), msg[1], {})
 
 
-def worker_main(wid, ev, conn, reqs, T, core, tmpdir):
+def worker_main(wid, ev, conn, reqs, core, tmpdir, ready, spec=None):
     pin(core)
+    if spec is not None:
+        # replica propia: proceso nuevo (spawn) que arma su copia a partir de las politicas y la particion del
+        # primario; no comparte ninguna pagina de memoria con el primario ni con las otras replicas
+        from devac import CommunityPolicyEvaluator
+        pols, pbc = spec
+        ev = CommunityPolicyEvaluator()
+        with quiet():
+            ev.run(pols, pbc, {})
+        for r in reqs[:200]:
+            ev.evaluate(r)
     ev._on_policy_change = []      # la replica no lleva grafo ni Q: eso vive en el primario
     ev.community_assigner = None
+    ready.put(wid)
+    T = pickle.loads(conn.recv_bytes())  # el primario manda los tiempos cuando todas estan listas
     state = {"version": 0, "stop": False}
     applied = []                   # (secuencia, tipo, t_recibido, t_aplicado)
     errors = Counter()
@@ -179,21 +207,34 @@ def run_config(ev, mon, ops, reqs, D, K, cores, args, tmpdir):
     pin(cores[0])
     warm, win = args.warmup * 1e9, args.window * 1e9
     now = clock()
-    T = {"start": now + int((1.5 + 0.1 * K) * 1e9)}
+    ctx = SPAWN if args.replica == "own" else CTX
+    spec = (list(ev.policies.values()), dict(ev.policies_by_community)) if args.replica == "own" else None
+    ready = ctx.Queue()
+    conns, procs, used = [], [], []
+    for w in range(K):
+        parent, child = ctx.Pipe(duplex=False)
+        # con mas procesos que CPUs logicos, varios comparten CPU y el sistema los turna
+        core = cores[(1 + w) % len(cores)] if 1 + w >= len(cores) else cores[1 + w]
+        used.append(core)
+        p = ctx.Process(target=worker_main,
+                        args=(w, None if spec else ev, parent, reqs, core, tmpdir, ready, spec))
+        p.start()
+        conns.append(child)
+        procs.append(p)
+        parent.close()
+    for _ in range(K):
+        ready.get(timeout=1800)
+    now = clock()
+    T = {"start": now + int(1.0e9)}
     T["warm_end"] = T["start"] + int(warm)
     T["phase2"] = T["warm_end"] + int(win)
     T["end"] = T["phase2"] + int(win)
-    conns, procs = [], []
-    for w in range(K):
-        parent, child = CTX.Pipe(duplex=False)
-        # con mas procesos que CPUs logicos, varios comparten CPU y el sistema los turna
-        core = cores[(1 + w) % len(cores)] if 1 + w >= len(cores) else cores[1 + w]
-        p = CTX.Process(target=worker_main, args=(w, ev, parent, reqs, T, core, tmpdir))
-        p.start()
-        child_end = child
-        conns.append(child_end)
-        procs.append(p)
-        parent.close()
+    tmsg = pickle.dumps(T)
+    for c in conns:
+        send(c, tmsg)
+    pkgs = {}
+    for c in [cores[0]] + used:
+        pkgs[cpu_package(c)] = pkgs.get(cpu_package(c), 0) + 1
     pss_primary = pss_mb()
     pub, rebuilds, w_err = [], [], Counter()
     rebuild_at = len(ops) // 4  # a la cuarta parte, para que el reacomodo termine dentro de la ventana
@@ -235,7 +276,9 @@ def run_config(ev, mon, ops, reqs, D, K, cores, args, tmpdir):
     for p in procs:
         p.join()
     primary_final = [1 if ev.evaluate(r)["result"] == "allow" else 0 for r in reqs]
-    return summarize(K, T, pub, rebuilds, w_err, D, len(reqs), tmpdir, pss_primary, primary_final, args)
+    res = summarize(K, T, pub, rebuilds, w_err, D, len(reqs), tmpdir, pss_primary, primary_final, args)
+    res["procesos_por_socket"] = " ".join(f"s{k}:{v}" for k, v in sorted(pkgs.items()))
+    return res
 
 
 def summarize(K, T, pub, rebuilds, w_err, D, n_req, tmpdir, pss_primary, primary_final, args):
@@ -335,6 +378,11 @@ def main():
     ap.add_argument("--op", choices=["toggle", "update", "add", "remove"], default="toggle",
                     help="tipo de cambio de la fase 2; toggle no desordena las comunidades (E5), asi que lo que "
                          "cambie en las lecturas se debe a la concurrencia")
+    ap.add_argument("--placement", choices=["compact", "spread"], default="compact",
+                    help="compact: llena un procesador antes de pasar al otro; spread: alterna entre procesadores")
+    ap.add_argument("--replica", choices=["fork", "own"], default="fork",
+                    help="fork: la replica hereda la memoria del primario (copia en escritura); own: proceso nuevo "
+                         "que arma su propia copia, sin compartir memoria")
     ap.add_argument("--data-seed", type=int, default=1)
     ap.add_argument("--mode", choices=W4_MODES, default="uniforme")
     ap.add_argument("--p-mix", type=float, default=W4_DEFAULTS["p_mix"])
@@ -349,10 +397,13 @@ def main():
     carga = f"W4-{variant_label(w4)}"
     base = [Policy.model_validate(p) for p in generate_w4(args.n, seed=args.data_seed, **w4)]
     allowed = os.sched_getaffinity(0) if hasattr(os, "sched_getaffinity") else set(range(os.cpu_count()))
-    cores, n_phys = cpu_order(allowed)
+    cores, n_phys = cpu_order(allowed, args.placement)
     tag = f"e7_{carga}_n{args.n}_{args.op}"
+    if args.placement != "compact" or args.replica != "fork":
+        tag += f"_{args.placement}_{args.replica}"
     log = lambda m: print(f"[E7 {carga} n={args.n}] {m}", flush=True)
-    log(f"CPUs logicos: {len(cores)}, nucleos fisicos: {n_phys}; lectores: {args.workers}")
+    log(f"CPUs logicos: {len(cores)}, nucleos fisicos: {n_phys}; lectores: {args.workers}; "
+        f"colocacion={args.placement}, replicas={args.replica}")
     for K in args.workers:
         if 1 + K > len(cores):
             log(f"K={K}: mas procesos que CPUs logicos; el sistema los turna (saturacion)")
@@ -389,7 +440,8 @@ def main():
             log(f"rep {rep + 1}/{args.reps} K={K}: {res['lect_por_s_reposo']}/s reposo, "
                 f"{res['lect_por_s_cambios']}/s con cambios | p95 {res['lectura_reposo_p95_us']} -> "
                 f"{res['lectura_cambios_p95_us']} us | propagacion p95 {res['propagacion_p95_ms']} ms | "
-                f"cambios {res['cambios_aplicados']} | inconsistentes {res['inconsistentes']} | "
+                f"cambios {res['cambios_aplicados']} | reacomodo {res['reacomodo_primario_s']} s | "
+                f"{res['procesos_por_socket']} | inconsistentes {res['inconsistentes']} | "
                 f"errores {res['errores_lector']}/{res['errores_escritor']}")
         gc.unfreeze()
 
@@ -405,16 +457,19 @@ def main():
         med = lambda k: st.median([x[k] for x in r if x[k] != ""]) if any(x[k] != "" for x in r) else None
         summ[str(K)] = {k: med(k) for k in r[0] if k not in ("carga", "n", "rep", "lectores", "inconsistentes",
                                                              "errores_lector", "errores_escritor",
-                                                             "lecturas_fase1", "lecturas_fase2", "ubicacion")}
+                                                             "lecturas_fase1", "lecturas_fase2", "ubicacion",
+                                                             "procesos_por_socket")}
         summ[str(K)].update({k: sum(x[k] for x in r) for k in ("inconsistentes", "errores_lector",
                                                                 "errores_escritor", "lecturas_fase1", "lecturas_fase2")})
         summ[str(K)]["final_ok_min_pct"] = min(x["final_ok_min_pct"] for x in r)
         summ[str(K)]["ubicacion"] = r[0]["ubicacion"]
+        summ[str(K)]["procesos_por_socket"] = r[0].get("procesos_por_socket", "")
         summ[str(K)]["ventana_todas_max_ms"] = max(x["ventana_todas_max_ms"] for x in r if x["ventana_todas_max_ms"] != "")
     meta = {
         "experimento": "E7", "carga": carga, "n_eventos": args.n, "repeticiones": args.reps,
         "lectores": args.workers, "calentamiento_s": args.warmup, "ventana_s": args.window,
         "ritmo_cambios_por_s": args.rate, "operacion": args.op, "reacomodo": "uno, a la cuarta parte de los cambios de la fase 2",
+        "colocacion": args.placement, "replicas": args.replica,
         "theta": args.theta, "pool": args.pool, "semilla_datos": args.data_seed, "parametros_w4": w4,
         "nucleos_fisicos": n_phys, "cpus_logicos": len(cores), "resumen": summ, "detalle": details,
         "fecha_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
