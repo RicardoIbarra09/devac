@@ -18,9 +18,10 @@ Por cada repeticion y numero de copias K:
       al acuse de la ultima copia), la latencia antes, durante y despues del reacomodo, y si alguna respuesta
       no coincide con el oraculo para la version de reglas que tenia esa copia.
 
-Todos los procesos se encuentran por medio de un archivo en la carpeta compartida (--rendezvous).
+Todos los procesos se encuentran por medio de un archivo en la carpeta compartida (--rendezvous); por eso los
+nodos intel y los amd pueden ser dos trabajos de Slurm separados que arrancan cuando cada uno consigue sus nodos.
 
-Uso (lo lanza e8_distribuido.sbatch):
+Uso (lo lanza e8_enviar.sh):
   run_e8.py principal --rendezvous DIR --replicas 1 2 4 8 --clients 32 --n 2000 --reps 10 --out-dir DIR
   run_e8.py copia     --rendezvous DIR
   run_e8.py cliente   --rendezvous DIR
@@ -120,7 +121,7 @@ class MsgReader:
         return out
 
 
-def connect_primary(rdv, timeout=3600):
+def connect_primary(rdv, timeout=7200):
     f = Path(rdv) / "principal.addr"
     t_end = mono() + timeout
     while mono() < t_end:
@@ -483,7 +484,7 @@ def role_primary(args):
     (rdv / "principal.addr").write_text(addr)
     log(f"principal en {socket.gethostname()} ({addr}, red: {via}); esperando {max(args.replicas)} copias "
         f"y {args.clients} clientes")
-    reps_all, clis = accept_peers(lsock, max(args.replicas), args.clients, log, timeout=1800)
+    reps_all, clis = accept_peers(lsock, max(args.replicas), args.clients, log, timeout=args.wait_peers)
     log("copias: " + ", ".join(f"{p.host}={p.addr} ({p.via})" for p in reps_all))
     log(f"clientes: {dict(Counter(c.host for c in clis))}")
 
@@ -725,6 +726,8 @@ def main():
     ap.add_argument("--theta", type=float, default=0.3)
     ap.add_argument("--pool", type=int, default=400)
     ap.add_argument("--data-seed", type=int, default=1)
+    ap.add_argument("--wait-peers", type=float, default=7200.0,
+                    help="segundos que el principal espera a que se conecten todas las copias y clientes")
     args = ap.parse_args()
     {"principal": role_primary, "copia": role_replica, "cliente": role_client}[args.papel](args)
 
