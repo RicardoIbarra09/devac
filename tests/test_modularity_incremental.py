@@ -71,7 +71,7 @@ def _pipeline(policies, threshold):
     _, event_to_community = detector.detect_communities(graph)
     event_to_policy = {e.event_id: p.policy_id for p in policies for e in p.events}
     evaluator = CommunityPolicyEvaluator([], {})
-    evaluator.run(policies, detector.map_policies_to_communities(event_to_policy, event_to_community))
+    evaluator.run(policies, detector.map_policies_to_communities(event_to_policy, event_to_community, graph))
     monitor = ModularityMonitor(evaluator, builder, detector, threshold=threshold, audit_policies=False)
     monitor._trigger_rebuild = monitor.rebuild_now  # sin hilos
     return evaluator, builder, monitor
@@ -194,7 +194,7 @@ def _twins(policies):
     detector = CommunityDetector()
     _, event_to_community = detector.detect_communities(graph)
     event_to_policy = {e.event_id: p.policy_id for p in policies for e in p.events}
-    pbc = detector.map_policies_to_communities(event_to_policy, event_to_community)
+    pbc = detector.map_policies_to_communities(event_to_policy, event_to_community, graph)
     twins = []
     for _ in range(2):
         own = copy.deepcopy(policies)

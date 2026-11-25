@@ -10,7 +10,7 @@ from networkx.algorithms.community import modularity
 from devac.events import DomainEvent
 from devac.evaluator import CommunityPolicyEvaluator
 from devac.graph import GraphBuilder
-from devac.communities import CommunityDetector
+from devac.communities import CommunityDetector, best_scored_community
 from devac.audit import audit_and_mitigate, order_by_priority
 from devac.modularity import IncrementalModularity
 from devac.models import Policy
@@ -126,6 +126,7 @@ class ModularityMonitor:
     # comunidad donde la politica nueva sube mas Q, con la ganancia de Louvain para mover un bloque B
     # (sus eventos) desde una comunidad propia a c:  dQ = K_Bc/m - D_c*K_B/(2 m^2), donde K_Bc es el
     # peso de B hacia c, K_B el grado de B y m, D_c ya cuentan las aristas de B.
+    # empate: la de menor id, igual que en la reconstruccion.
     # None si ninguna ganancia es positiva: la politica abre su propia comunidad
     def best_community(self, policy: Policy) -> Optional[object]:
         with self.lock:
@@ -159,13 +160,13 @@ class ModularityMonitor:
             if m <= 0:
                 return None
 
-            best, best_gain = None, 0.0
+            gains: Dict[object, float] = {}
             for comm, k_in in to_comm.items():
                 d_c = self._q.degree.get(comm, 0.0) + k_in
                 gain = k_in / m - d_c * k_block / (2 * m * m)
-                if gain > best_gain:
-                    best, best_gain = comm, gain
-            return best
+                if gain > 0.0:
+                    gains[comm] = gain
+            return best_scored_community(gains) if gains else None
 
     def record_swap(self, policy: Optional[Policy] = None, *, op: Optional[str] = None,
                     t_incremental: float = 0.0, t_graph: float = 0.0) -> float:
@@ -344,9 +345,10 @@ class ModularityMonitor:
     def _louvain(self, graph: nx.Graph, policies: List[Policy], seed: Optional[int]) -> Dict[object, List[str]]:
         _, event_to_community = self.community_detector.detect_communities(graph, seed=seed)
         event_to_policy = {e.event_id: p.policy_id for p in policies for e in p.events}
-        return self.community_detector.map_policies_to_communities(event_to_policy, event_to_community)
+        return self.community_detector.map_policies_to_communities(event_to_policy, event_to_community, graph)
 
-    # nodo -> comunidad segun el evaluador; los nodos de politicas sin comunidad no cuentan
+    # nodo -> comunidad segun el evaluador; los nodos de politicas sin comunidad no cuentan. si louvain
+    # separo los eventos de una politica, todos cuentan en la comunidad que le toco a la politica
     def _partition(self, graph: nx.Graph) -> Dict[str, object]:
         node_community = {}
         for comm, policy_ids in self.evaluator.policies_by_community.items():

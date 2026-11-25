@@ -84,7 +84,7 @@ def build_once(policies, threshold, louvain_seed):
 
     t0 = time.perf_counter()
     ev2p = {e.event_id: p.policy_id for p in policies for e in p.events}
-    pbc = det.map_policies_to_communities(ev2p, ev2c)
+    pbc = det.map_policies_to_communities(ev2p, ev2c, G)
     stats["t_map_s"] = time.perf_counter() - t0
 
     t0 = time.perf_counter()

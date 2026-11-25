@@ -99,7 +99,7 @@ def test_el_monitor_mantiene_el_grafo_al_mutar_el_evaluador(audit, capsys):
     _, event_to_community = detector.detect_communities(graph)
     event_to_policy = {e.event_id: p.policy_id for p in policies for e in p.events}
     evaluator = CommunityPolicyEvaluator([], {})
-    evaluator.run(policies, detector.map_policies_to_communities(event_to_policy, event_to_community))
+    evaluator.run(policies, detector.map_policies_to_communities(event_to_policy, event_to_community, graph))
     ModularityMonitor(evaluator, builder, detector, threshold=1e9, audit_policies=audit)
 
     rng = random.Random(5)

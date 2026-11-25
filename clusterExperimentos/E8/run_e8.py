@@ -312,7 +312,9 @@ def run_step(socks, phase, rate, duration, warm, pool_n, cid, grace):
     t_recv = np.full(n_tot, np.nan)
     dec = np.full(n_tot, -2, np.int8)
     ver = np.full(n_tot, -1, np.int32)
-    idx = ((cid * 37 + np.arange(n_tot)) % pool_n).astype(np.int32)
+    # cual solicitud se pide es al azar e independiente de a que copia va (la copia se elige por turnos); asi cada
+    # copia recibe toda la variedad de solicitudes y no solo una parte (lo que la haria artificialmente mas rapida)
+    idx = np.random.default_rng([cid, phase]).integers(0, pool_n, n_tot).astype(np.int32)
     outb = [bytearray() for _ in range(K)]
     inb = [bytearray() for _ in range(K)]
     sel = selectors.DefaultSelector()
@@ -684,7 +686,7 @@ def role_primary(args):
             log(f"rep {rep + 1} K={K} fase B: {j['respondidas_por_s']}/s a {b_rate:.0f}/s pedidas; p95 "
                 f"{row['p95_antes_reacomodo_ms']} -> {row['p95_durante_reacomodo_ms']} (reacomodo) -> "
                 f"{row['p95_despues_reacomodo_ms']} ms; ventana p95 {row['ventana_p95_ms']} ms, max "
-                f"{row['ventana_max_ms']} ms; reacomodo {row['reacomodo_principal_s']} s en el principal, "
+                f"{row['ventana_max_ms']} ms; aplicar un cambio en la copia {row['aplicar_cambio_copia_p50_ms']} ms; reacomodo {row['reacomodo_principal_s']} s en el principal, "
                 f"{row['reacomodo_hasta_ultima_copia_s']} s hasta la ultima copia; inconsistentes "
                 f"{j['inconsistentes']}; final ok {row['final_ok_min_pct']}%; errores "
                 f"{row['errores_copias']}/{row['errores_principal']}")

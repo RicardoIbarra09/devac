@@ -56,7 +56,7 @@ def build(policies, theta, louvain_seed):
     det = CommunityDetector()
     _, ev2c = det.detect_communities(G)
     ev2p = {e.event_id: p.policy_id for p in policies for e in p.events}
-    pbc = det.map_policies_to_communities(ev2p, ev2c)
+    pbc = det.map_policies_to_communities(ev2p, ev2c, G)
     ev = CommunityPolicyEvaluator()
     ev.run(policies, pbc)
     build_s = time.perf_counter() - t0

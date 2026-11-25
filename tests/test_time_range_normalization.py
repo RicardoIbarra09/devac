@@ -13,7 +13,7 @@ def _build_evaluator(policies):
     detector = CommunityDetector()
     _, event_to_community = detector.detect_communities(graph)
     event_to_policy = {e.event_id: p.policy_id for p in policies for e in p.events}
-    policies_by_community = detector.map_policies_to_communities(event_to_policy, event_to_community)
+    policies_by_community = detector.map_policies_to_communities(event_to_policy, event_to_community, graph)
     evaluator = CommunityPolicyEvaluator()
     evaluator.run(policies, policies_by_community)
     return evaluator

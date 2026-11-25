@@ -83,7 +83,7 @@ def main():
     cd = CommunityDetector()
     _, e2c = cd.detect_communities(graph)
     e2p = {e.event_id: p.policy_id for p in policies for e in p.events}
-    pbc = cd.map_policies_to_communities(e2p, e2c)
+    pbc = cd.map_policies_to_communities(e2p, e2c, graph)
 
     ce = CommunityPolicyEvaluator()
     ce.run(policies, pbc)

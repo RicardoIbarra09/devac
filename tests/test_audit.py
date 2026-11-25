@@ -41,7 +41,7 @@ def _build(policies):
     detector = CommunityDetector()
     _, event_to_community = detector.detect_communities(graph)
     event_to_policy = {e.event_id: p.policy_id for p in policies for e in p.events}
-    return detector.map_policies_to_communities(event_to_policy, event_to_community)
+    return detector.map_policies_to_communities(event_to_policy, event_to_community, graph)
 
 
 def test_identical_events_are_equal():
@@ -189,7 +189,7 @@ def test_modularity_monitor_runs_audit_during_level4_rebuild():
     cd = CommunityDetector()
     _, e2c = cd.detect_communities(graph)
     e2p = {e.event_id: p.policy_id for p in policies for e in p.events}
-    pbc = cd.map_policies_to_communities(e2p, e2c)
+    pbc = cd.map_policies_to_communities(e2p, e2c, graph)
 
     ce = CommunityPolicyEvaluator()
     ce.run(policies, pbc)
