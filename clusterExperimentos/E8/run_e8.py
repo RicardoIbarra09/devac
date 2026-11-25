@@ -513,9 +513,12 @@ def role_primary(args):
                 f"{mono() - t0:.1f} s (armado en cada copia: {[r[1] for r in ready]} s)")
 
             # ---------------- fase A: escalones sin cambios
+            # primero sube multiplicando por --step-factor hasta saturar; despues afina entre el ultimo escalon que
+            # aguanto y el que se saturo, partiendo la diferencia (en proporcion) --refine veces
             rate = args.rate0 * K
-            base_p95, best, sat_rate = None, None, None
-            for s in range(args.max_steps):
+            base_p95, best, sat_rate, ok_rate = None, None, None, None
+            s, refining, n_ref = 0, False, 0
+            while s < args.max_steps + args.refine:
                 phase_id += 1
                 for p in reps:
                     send_msg(p.sock, ("fase", phase_id))
@@ -532,20 +535,38 @@ def role_primary(args):
                                                          max(j["solicitudes"], 1) > 1.0)
                 cliente_lento = j["atraso_cliente_p99_ms"] > args.client_lag_ms
                 row = {"carga": carga, "n": args.n, "rep": rep, "copias": K, "escalon": s + 1,
+                       "tipo": "afinar" if refining else "subir",
                        "ritmo_pedido_por_s": round(rate, 1), **j, "razon_p95_vs_primero": razon,
                        "saturado": saturado, "cliente_atrasado": cliente_lento}
                 steps_rows.append(row)
-                log(f"rep {rep + 1} K={K} escalon {s + 1}: pedido {rate:.0f}/s, respondidas "
-                    f"{j['respondidas_por_s']}/s, p95 {j['p95_ms']} ms (x{razon}), sin respuesta "
+                log(f"rep {rep + 1} K={K} escalon {s + 1}{' (afinar)' if refining else ''}: pedido {rate:.0f}/s, "
+                    f"respondidas {j['respondidas_por_s']}/s, p95 {j['p95_ms']} ms (x{razon}), sin respuesta "
                     f"{j['sin_respuesta_pct']}%, inconsistentes {j['inconsistentes']}, atraso cliente p99 "
                     f"{j['atraso_cliente_p99_ms']} ms{' SATURADO' if saturado else ''}"
                     f"{' (OJO: clientes atrasados)' if cliente_lento else ''}")
+                s += 1
                 if saturado:
                     sat_rate = rate
-                    break
-                best = j["respondidas_por_s"]
-                rate *= args.step_factor
+                    time.sleep(args.grace)  # que la copia descarte la fila del escalon saturado
+                else:
+                    best, ok_rate = max(best or 0, j["respondidas_por_s"]), max(ok_rate or 0, rate)
+                if not refining:
+                    if not saturado:
+                        rate *= args.step_factor
+                        if s >= args.max_steps:
+                            break
+                        continue
+                    if ok_rate is None or args.refine == 0:
+                        break
+                    refining = True
+                else:
+                    n_ref += 1
+                    if n_ref >= args.refine:
+                        break
+                rate = math.sqrt(ok_rate * sat_rate)
             capacity = best
+            log(f"rep {rep + 1} K={K}: capacidad {capacity}/s (aguanto {ok_rate and round(ok_rate)}/s, "
+                f"se saturo en {sat_rate and round(sat_rate)}/s)")
 
             # ---------------- fase B: carga fija con cambios y un reacomodo
             phase_id += 1
@@ -645,7 +666,7 @@ def role_primary(args):
             for f in finals:
                 r_err.update(f[3])
             row = {"carga": carga, "n": args.n, "rep": rep, "copias": K, "capacidad_fase_a_por_s": capacity,
-                   "ritmo_saturacion_por_s": sat_rate, "ritmo_fase_b_por_s": round(b_rate, 1), **j,
+                   "ritmo_aguanto_por_s": ok_rate and round(ok_rate, 1), "ritmo_saturacion_por_s": sat_rate and round(sat_rate, 1), "ritmo_fase_b_por_s": round(b_rate, 1), **j,
                    "p95_antes_reacomodo_ms": pct(lat[before], 95), "p95_durante_reacomodo_ms": pct(lat[during], 95),
                    "p95_despues_reacomodo_ms": pct(lat[after], 95),
                    "cambios_enviados": n_pub, "cambios_sin_acuse_de_todas": perdidos,
@@ -685,7 +706,7 @@ def role_primary(args):
         "experimento": "E8", "carga": carga, "n_eventos": args.n, "repeticiones": args.reps,
         "copias": args.replicas, "clientes": args.clients, "operacion": args.op,
         "fase_a": {"ritmo_inicial_por_copia": args.rate0, "factor": args.step_factor, "escalon_s": args.step,
-                   "calentamiento_s": args.step_warmup, "saturacion": f"p95 > {args.sat_factor}x primer escalon "
+                   "calentamiento_s": args.step_warmup, "afinar": args.refine, "saturacion": f"p95 > {args.sat_factor}x primer escalon "
                    "o > 1% sin respuesta/error", "max_escalones": args.max_steps},
         "fase_b": {"fraccion_capacidad": args.b_fraction, "cambios_por_s": args.wrate, "ventana_s": args.window,
                    "reacomodo_en_fraccion": args.rebuild_at},
@@ -714,6 +735,7 @@ def main():
     ap.add_argument("--step", type=float, default=60.0, help="segundos de cada escalon")
     ap.add_argument("--step-warmup", type=float, default=10.0, help="segundos iniciales de cada escalon que no se miden")
     ap.add_argument("--max-steps", type=int, default=14)
+    ap.add_argument("--refine", type=int, default=3, help="escalones extra para afinar el punto de saturacion")
     ap.add_argument("--sat-factor", type=float, default=10.0)
     ap.add_argument("--grace", type=float, default=3.0, help="segundos de espera de respuestas al final de un escalon")
     ap.add_argument("--client-lag-ms", type=float, default=50.0)
