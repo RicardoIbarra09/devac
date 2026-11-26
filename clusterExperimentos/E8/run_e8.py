@@ -53,7 +53,7 @@ HERE = Path(__file__).resolve().parent
 CTRL_PORT = int(os.environ.get("E8_PORT", "5640"))
 DATA_PORT = CTRL_PORT + 1
 REQ = struct.Struct("!IHI")     # numero de solicitud, escalon, indice en la lista de solicitudes
-RESP = struct.Struct("!IbI")    # numero de solicitud, decision (1 permitir, 0 negar, -1 error), version
+RESP = struct.Struct("!IHbI")   # numero de solicitud, escalon, decision (1 permitir, 0 negar, -1 error), version
 LEN = struct.Struct("!I")
 now = time.time                 # reloj de pared: comparable entre nodos (NTP), solo para marcar momentos
 mono = time.perf_counter        # para medir duraciones dentro de un mismo proceso
@@ -291,7 +291,7 @@ def role_replica(args):
                     except Exception as e:  # noqa: BLE001
                         errors["lector:" + type(e).__name__] += 1
                         d = -1
-                    out += RESP.pack(seq, d, state["version"])
+                    out += RESP.pack(seq, ph, d, state["version"])
                 del buf[:k * REQ.size]
                 if out:
                     try:
@@ -355,8 +355,10 @@ def run_step(socks, phase, rate, duration, warm, pool_n, cid, grace):
             b += chunk
             m = len(b) // RESP.size
             for j in range(m):
-                seq, d, v = RESP.unpack_from(b, j * RESP.size)
-                if seq < n_tot and np.isnan(t_recv[seq]):
+                seq, ph, d, v = RESP.unpack_from(b, j * RESP.size)
+                # la numeracion empieza en 0 en cada escalon: una respuesta atrasada del escalon anterior
+                # traeria un numero que aqui es otra solicitud. Por eso cada respuesta trae su escalon
+                if ph == phase and seq < n_tot and np.isnan(t_recv[seq]):
                     t_recv[seq] = tr
                     dec[seq] = d
                     ver[seq] = v
