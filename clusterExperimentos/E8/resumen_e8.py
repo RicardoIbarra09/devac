@@ -73,14 +73,17 @@ def breakdown(rows):
                 continue
             f = lambda c: med(num(x[c]) for x in rr)  # noqa: E731
             resp = f("respuesta_media_ms")
-            parts = [f("envio_cliente_media_ms"), f("red_ida_vuelta_media_ms"), f("evaluacion_media_ms"),
-                     f("resto_media_ms")]
+            has = rr[0].get("copia_sin_evaluar_media_ms") not in (None, "")
+            parts = [f("envio_cliente_media_ms"), f("red_ida_vuelta_media_ms"), f("evaluacion_media_ms")]
+            parts += [f("copia_sin_evaluar_media_ms"), f("fuera_media_ms")] if has else [f("resto_media_ms"), None]
             pc = [f"{fmt(v, 3)} ({100 * v / resp:.0f}%)" if v is not None and resp else "-" for v in parts]
             out.append([K, fmt(rate * K), fmt(resp, 3), *pc, fmt(f("copia_ocupada_pct"), 0) + "%",
                         sum(int(x["inconsistentes"]) for x in rr)])
         table(["copias", "pedidas/s", "respuesta", "envio cliente", "red ida y vuelta", "evaluacion DEvAC",
-               "resto (fila, etc.)", "copia ocupada", "incorrectas"], out)
-        print("   respuesta = envio del cliente + red ida y vuelta + evaluacion en DEvAC + resto\n")
+               "en copia sin evaluar", "fuera de la copia", "copia ocupada", "incorrectas"], out)
+        print("   respuesta = envio del cliente + red ida y vuelta + evaluacion en DEvAC + en la copia sin evaluar\n"
+              "               (esperar turno, empacar, enviar) + fuera de la copia (viaje con carga, recibir en el cliente)\n"
+              "   (en corridas anteriores a esta medicion, la penultima columna es todo el resto y la ultima va vacia)\n")
 
 
 def main():

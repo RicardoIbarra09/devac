@@ -43,7 +43,7 @@ import subprocess  # noqa: E402
 import sys  # noqa: E402
 import threading  # noqa: E402
 import time  # noqa: E402
-from collections import Counter  # noqa: E402
+from collections import Counter, deque  # noqa: E402
 from datetime import datetime, timezone  # noqa: E402
 from pathlib import Path  # noqa: E402
 
@@ -194,6 +194,8 @@ def role_replica(args):
     state = {"version": 0, "phase": -1, "active": False}
     clients = {}        # socket -> bytearray pendiente
     eval_us = []        # cuanto tardo DEvAC en evaluar cada solicitud del escalon actual (microsegundos)
+    copia_us = []       # cuanto estuvo cada solicitud dentro de la copia: de leerla de la red a mandar su respuesta
+    arrivals = {}       # socket -> deque de [bytes, momento en que se leyeron], para saber cuando llego cada solicitud
     errors = Counter()
 
     def ctrl_send(obj):
@@ -222,8 +224,9 @@ def role_replica(args):
             elif kind == "fase":
                 state["phase"] = msg[1]
                 eval_us.clear()
+                copia_us.clear()
             elif kind == "estadisticas":
-                ctrl_send(("estadisticas", np.asarray(eval_us, np.float32)))
+                ctrl_send(("estadisticas", np.asarray(eval_us, np.float32), np.asarray(copia_us, np.float32)))
             elif kind in ("sync", "rebuild"):
                 t0 = mono()
                 try:
@@ -254,6 +257,7 @@ def role_replica(args):
                         c.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                         c.setblocking(False)
                         clients[c] = bytearray()
+                        arrivals[c] = deque()
                         sel.register(c, selectors.EVENT_READ, "cliente")
                 except BlockingIOError:
                     pass
@@ -272,8 +276,10 @@ def role_replica(args):
                     sel.unregister(c)
                     c.close()
                     clients.pop(c, None)
+                    arrivals.pop(c, None)
                 elif chunk:
                     clients[c] += chunk
+                    arrivals[c].append([len(chunk), mono()])
         # atender lo pendiente por turnos entre clientes; antes de cada solicitud, aplicar los cambios que
         # ya llegaron del principal (asi ninguna solicitud se evalua a la mitad de un cambio)
         pending = True
@@ -285,7 +291,17 @@ def role_replica(args):
                     continue
                 pending = True
                 out = bytearray()
+                t_in = []
+                arr = arrivals.get(c)
                 for j in range(k):
+                    t_arr = arr[0][1] if arr else None   # momento en que la copia leyo esta solicitud
+                    left = REQ.size
+                    while arr and left > 0:
+                        take = min(left, arr[0][0])
+                        arr[0][0] -= take
+                        left -= take
+                        if arr[0][0] <= 0:
+                            arr.popleft()
                     if not handle_ctrl():
                         return
                     seq, ph, idx = REQ.unpack_from(buf, j * REQ.size)
@@ -302,6 +318,8 @@ def role_replica(args):
                         errors["lector:" + type(e).__name__] += 1
                         d = -1
                     out += RESP.pack(seq, ph, d, state["version"])
+                    if t_arr is not None:
+                        t_in.append(t_arr)
                 del buf[:k * REQ.size]
                 if out:
                     try:
@@ -310,6 +328,8 @@ def role_replica(args):
                         c.setblocking(False)
                     except OSError:
                         pass
+                    t_out = mono()
+                    copia_us.extend((t_out - t) * 1e6 for t in t_in)
 
 
 # ---------------------------------------------------------------- cliente
@@ -520,19 +540,26 @@ def run_breakdown(args, rep, K, reps, clis, addrs, reqs, D, carga, log, next_pha
             log(f"rep {rep + 1} K={K} desglose a {rate_per_copy:g}/s por copia: FALLO {fails[:2]}")
             continue
         j = judge(m, D[:1], args.step - args.step_warmup)
-        ev_ms = []
+        ev_ms, in_ms = [], []
         for p in reps:
             send_msg(p.sock, ("estadisticas",))
-            ev_ms.append(recv_msg(p.sock)[1] / 1e3)
+            msg = recv_msg(p.sock)
+            ev_ms.append(msg[1] / 1e3)
+            in_ms.append(msg[2] / 1e3)
         ev_all = np.concatenate(ev_ms) if ev_ms else np.zeros(0)
+        in_all = np.concatenate(in_ms) if in_ms else np.zeros(0)
         busy = [100.0 * float(e.sum()) / 1e3 / args.step for e in ev_ms]   # % del escalon que la copia evaluo
         lat = m["lat_ms"][~np.isnan(m["lat_ms"])]
-        r_m, a_m, n_m, e_m = mean(lat), round(m["atraso_media_ms"], 4), mean(ping_ms), mean(ev_all)
+        r_m, a_m, n_m, e_m, c_m = mean(lat), round(m["atraso_media_ms"], 4), mean(ping_ms), mean(ev_all), mean(in_all)
         row = {"carga": carga, "n": args.n, "rep": rep, "copias": K, "ritmo_por_copia": rate_per_copy,
                "respondidas_por_s": j["respondidas_por_s"], "inconsistentes": j["inconsistentes"],
                "respuesta_media_ms": r_m, "envio_cliente_media_ms": a_m, "red_ida_vuelta_media_ms": n_m,
                "evaluacion_media_ms": e_m,
                "resto_media_ms": round(r_m - a_m - n_m - e_m, 4) if "" not in (r_m, n_m, e_m) else "",
+               # el resto se parte en: dentro de la copia sin evaluar (esperar turno, empacar, enviar) y fuera de ella
+               "dentro_copia_media_ms": c_m, "dentro_copia_p50_ms": pct(in_all, 50),
+               "copia_sin_evaluar_media_ms": round(c_m - e_m, 4) if "" not in (c_m, e_m) else "",
+               "fuera_media_ms": round(r_m - a_m - n_m - c_m, 4) if "" not in (r_m, n_m, c_m) else "",
                "respuesta_p50_ms": pct(lat, 50), "respuesta_p95_ms": j["p95_ms"],
                "red_ida_vuelta_p50_ms": pct(ping_ms, 50), "red_ida_vuelta_p95_ms": pct(ping_ms, 95),
                "evaluacion_p50_ms": pct(ev_all, 50), "evaluacion_p95_ms": pct(ev_all, 95),
@@ -540,7 +567,8 @@ def run_breakdown(args, rep, K, reps, clis, addrs, reqs, D, carga, log, next_pha
                "atraso_cliente_p99_ms": j["atraso_cliente_p99_ms"]}
         rows.append(row)
         log(f"rep {rep + 1} K={K} desglose a {rate_per_copy:g}/s por copia (promedios): respuesta {r_m} ms = "
-            f"envio del cliente {a_m} + red {n_m} + evaluacion {e_m} + resto {row['resto_media_ms']} ms; "
+            f"envio del cliente {a_m} + red {n_m} + evaluacion {e_m} + resto {row['resto_media_ms']} ms "
+            f"(de ese resto: en la copia sin evaluar {row['copia_sin_evaluar_media_ms']}, fuera {row['fuera_media_ms']}); "
             f"p95: respuesta {j['p95_ms']}, red {row['red_ida_vuelta_p95_ms']}, evaluacion "
             f"{row['evaluacion_p95_ms']}; copia ocupada {row['copia_ocupada_pct']}%; incorrectas {j['inconsistentes']}")
     return rows
