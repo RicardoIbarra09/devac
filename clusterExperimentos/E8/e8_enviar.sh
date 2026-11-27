@@ -25,7 +25,9 @@ else
   NI=9; NA=2; T="${TIEMPO:-16:00:00}"
   export REPS="${REPS:-10}" REPLICAS="${REPLICAS:-1 2 4 8}" STEP="${STEP:-60}" STEP_WARMUP=10 MAX_STEPS=14 WINDOW=60
 fi
-export RUN="${MODO}_n${N}_$(date +%Y%m%d_%H%M%S)"    # nombre unico: carpeta de resultados y punto de encuentro
+export E8_COPIA_GC="${E8_COPIA_GC:-normal}"   # normal | freeze | apagado: manejo de memoria en las copias
+SUF=""; [ "$E8_COPIA_GC" != "normal" ] && SUF="_gc${E8_COPIA_GC}"
+export RUN="${MODO}_n${N}${SUF}_$(date +%Y%m%d_%H%M%S)"    # nombre unico: carpeta de resultados y punto de encuentro
 export NCLI=$(( NA * CLIENTES_POR_NODO ))
 cd "$E8_DIR"
 J1=$(sbatch --parsable --job-name="e8_${MODO}_intel" --partition=intel --nodes="$NI" --ntasks-per-node=1 \

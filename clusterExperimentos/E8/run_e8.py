@@ -34,6 +34,7 @@ import argparse  # noqa: E402
 import csv  # noqa: E402
 import json  # noqa: E402
 import math  # noqa: E402
+import gc  # noqa: E402
 import pickle  # noqa: E402
 import selectors  # noqa: E402
 import socket  # noqa: E402
@@ -191,7 +192,14 @@ def role_replica(args):
     sel.register(ctrl, selectors.EVENT_READ, "control")
 
     ev, reqs = None, []
-    state = {"version": 0, "phase": -1, "active": False}
+    state = {"version": 0, "phase": -1, "active": False, "cpu0": time.process_time(), "wall0": mono()}
+    gc_mode = os.environ.get("E8_COPIA_GC", "normal")   # normal | freeze | apagado (solo para diagnostico)
+    gc_counts = [0, 0, 0]
+
+    def gc_cb(phase, info):
+        if phase == "start":
+            gc_counts[info["generation"]] += 1
+    gc.callbacks.append(gc_cb)
     clients = {}        # socket -> bytearray pendiente
     eval_us = []        # cuanto tardo DEvAC en evaluar cada solicitud del escalon actual (microsegundos)
     copia_us = []       # cuanto estuvo cada solicitud dentro de la copia: de leerla de la red a mandar su respuesta
@@ -220,13 +228,22 @@ def role_replica(args):
                 ev.community_assigner = None
                 state.update(version=0, phase=-1, active=True)
                 errors.clear()
+                if gc_mode in ("freeze", "apagado"):
+                    gc.collect()
+                    gc.freeze()          # lo ya construido (las reglas) ya no se revisa en cada limpieza
+                if gc_mode == "apagado":
+                    gc.disable()
                 ctrl_send(("lista", round(mono() - t0, 3)))
             elif kind == "fase":
                 state["phase"] = msg[1]
                 eval_us.clear()
                 copia_us.clear()
+                state.update(cpu0=time.process_time(), wall0=mono())
+                gc_counts[:] = [0, 0, 0]
             elif kind == "estadisticas":
-                ctrl_send(("estadisticas", np.asarray(eval_us, np.float32), np.asarray(copia_us, np.float32)))
+                cpu = 100.0 * (time.process_time() - state["cpu0"]) / max(mono() - state["wall0"], 1e-9)
+                ctrl_send(("estadisticas", np.asarray(eval_us, np.float32), np.asarray(copia_us, np.float32),
+                           round(cpu, 1), list(gc_counts), gc_mode))
             elif kind in ("sync", "rebuild"):
                 t0 = mono()
                 try:
@@ -540,12 +557,15 @@ def run_breakdown(args, rep, K, reps, clis, addrs, reqs, D, carga, log, next_pha
             log(f"rep {rep + 1} K={K} desglose a {rate_per_copy:g}/s por copia: FALLO {fails[:2]}")
             continue
         j = judge(m, D[:1], args.step - args.step_warmup)
-        ev_ms, in_ms = [], []
+        ev_ms, in_ms, cpu_pct, gcs, gc_mode = [], [], [], [], "?"
         for p in reps:
             send_msg(p.sock, ("estadisticas",))
             msg = recv_msg(p.sock)
             ev_ms.append(msg[1] / 1e3)
             in_ms.append(msg[2] / 1e3)
+            cpu_pct.append(msg[3])
+            gcs.append(msg[4])
+            gc_mode = msg[5]
         ev_all = np.concatenate(ev_ms) if ev_ms else np.zeros(0)
         in_all = np.concatenate(in_ms) if in_ms else np.zeros(0)
         busy = [100.0 * float(e.sum()) / 1e3 / args.step for e in ev_ms]   # % del escalon que la copia evaluo
@@ -564,13 +584,20 @@ def run_breakdown(args, rep, K, reps, clis, addrs, reqs, D, carga, log, next_pha
                "red_ida_vuelta_p50_ms": pct(ping_ms, 50), "red_ida_vuelta_p95_ms": pct(ping_ms, 95),
                "evaluacion_p50_ms": pct(ev_all, 50), "evaluacion_p95_ms": pct(ev_all, 95),
                "copia_ocupada_pct": round(st.mean(busy), 1) if busy else "",
+               # uso real de procesador de la copia (todo lo que hace, no solo evaluar) y limpiezas de memoria
+               "copia_cpu_pct": round(st.mean(cpu_pct), 1) if cpu_pct else "",
+               "limpiezas_gen0_gen1_gen2_por_s": "/".join(f"{st.mean(g[i] for g in gcs) / args.step:.1f}"
+                                                         for i in range(3)) if gcs else "",
+               "gc_copia": gc_mode,
                "atraso_cliente_p99_ms": j["atraso_cliente_p99_ms"]}
         rows.append(row)
         log(f"rep {rep + 1} K={K} desglose a {rate_per_copy:g}/s por copia (promedios): respuesta {r_m} ms = "
             f"envio del cliente {a_m} + red {n_m} + evaluacion {e_m} + resto {row['resto_media_ms']} ms "
             f"(de ese resto: en la copia sin evaluar {row['copia_sin_evaluar_media_ms']}, fuera {row['fuera_media_ms']}); "
             f"p95: respuesta {j['p95_ms']}, red {row['red_ida_vuelta_p95_ms']}, evaluacion "
-            f"{row['evaluacion_p95_ms']}; copia ocupada {row['copia_ocupada_pct']}%; incorrectas {j['inconsistentes']}")
+            f"{row['evaluacion_p95_ms']}; copia evaluando {row['copia_ocupada_pct']}%, procesador de la copia "
+            f"{row['copia_cpu_pct']}%; limpiezas de memoria por s (gen0/1/2) {row['limpiezas_gen0_gen1_gen2_por_s']} "
+            f"(gc {gc_mode}); incorrectas {j['inconsistentes']}")
     return rows
 
 
@@ -836,6 +863,7 @@ def role_primary(args):
         "copias_nodos": [p.host for p in reps_all], "clientes_nodos": dict(Counter(c.host for c in clis)),
         "detalle": details, "fecha_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "cpu_principal": run_e1.cpu_model(), "python": sys.version.split()[0],
+        "gc_copias": os.environ.get("E8_COPIA_GC", "normal"),
         "commit_demo": os.environ.get("DEVAC_COMMIT", "desconocido"), "slurm_job_id": os.environ.get("SLURM_JOB_ID"),
     }
     with open(out_dir / f"{tag}_meta.json", "w", encoding="utf-8") as f:

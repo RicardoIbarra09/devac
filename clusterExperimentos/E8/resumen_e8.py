@@ -64,11 +64,11 @@ def table(head, rows):
 def breakdown(rows):
     g = defaultdict(list)
     for x in rows:
-        g[(int(x["n"]), int(x["copias"]), float(x["ritmo_por_copia"]))].append(x)
+        g[(int(x["n"]), int(x["copias"]), float(x["ritmo_por_copia"]), x.get("gc_copia") or "normal")].append(x)
     for n in sorted({k[0] for k in g}):
         print(f"=== E8, desglose del tiempo de respuesta, {n} politicas (promedios en ms, mediana de las repeticiones)\n")
         out = []
-        for (nn, K, rate), rr in sorted(g.items()):
+        for (nn, K, rate, _gcm), rr in sorted(g.items()):
             if nn != n:
                 continue
             f = lambda c: med(num(x[c]) for x in rr)  # noqa: E731
@@ -77,10 +77,14 @@ def breakdown(rows):
             parts = [f("envio_cliente_media_ms"), f("red_ida_vuelta_media_ms"), f("evaluacion_media_ms")]
             parts += [f("copia_sin_evaluar_media_ms"), f("fuera_media_ms")] if has else [f("resto_media_ms"), None]
             pc = [f"{fmt(v, 3)} ({100 * v / resp:.0f}%)" if v is not None and resp else "-" for v in parts]
-            out.append([K, fmt(rate * K), fmt(resp, 3), *pc, fmt(f("copia_ocupada_pct"), 0) + "%",
+            cpu = f("copia_cpu_pct")
+            gcm = rr[0].get("gc_copia") or "normal"
+            out.append([K, fmt(rate * K), gcm, fmt(resp, 3), *pc, fmt(f("copia_ocupada_pct"), 0) + "%",
+                        (fmt(cpu, 0) + "%") if cpu is not None else "-", rr[0].get("limpiezas_gen0_gen1_gen2_por_s") or "-",
                         sum(int(x["inconsistentes"]) for x in rr)])
-        table(["copias", "pedidas/s", "respuesta", "envio cliente", "red ida y vuelta", "evaluacion DEvAC",
-               "en copia sin evaluar", "fuera de la copia", "copia ocupada", "incorrectas"], out)
+        table(["copias", "pedidas/s", "gc", "respuesta", "envio cliente", "red ida y vuelta", "evaluacion DEvAC",
+               "en copia sin evaluar", "fuera de la copia", "copia evaluando", "procesador copia",
+               "limpiezas/s gen0/1/2", "incorrectas"], out)
         print("   respuesta = envio del cliente + red ida y vuelta + evaluacion en DEvAC + en la copia sin evaluar\n"
               "               (esperar turno, empacar, enviar) + fuera de la copia (viaje con carga, recibir en el cliente)\n"
               "   (en corridas anteriores a esta medicion, la penultima columna es todo el resto y la ultima va vacia)\n")
