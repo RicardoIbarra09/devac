@@ -151,19 +151,26 @@ def main():
               f"escalones con clientes atrasados: {late}\n")
 
         # ---------------- fase B
+        # el tiempo "despues del reacomodo" tiene dos grupos (repeticiones que quedan lentas y normales): la mediana
+        # salta de un grupo a otro, asi que se cuentan las lentas (p95 > 1 s) y se da el rango de cada grupo
         out = []
         for k in K:
             rr = g[k]
             ped = med(num(r["ritmo_fase_b_por_s"]) for r in rr)
             att = med(num(r["respondidas_por_s"]) for r in rr)
-            out.append([k, fmt(ped), fmt(att), f"{100 * att / ped:.0f}%" if ped and att else "-",
+            aft = [v for v in (num(r["p95_despues_reacomodo_ms"]) for r in rr) if v is not None]
+            slow = [v for v in aft if v > 1000]
+            fast = [v for v in aft if v <= 1000]
+            out.append([k, fmt(ped), f"{100 * att / ped:.0f}%" if ped and att else "-",
                         fmt(med(num(r["p95_antes_reacomodo_ms"]) for r in rr)),
                         fmt(med(num(r["p95_durante_reacomodo_ms"]) for r in rr)),
-                        fmt(med(num(r["p95_despues_reacomodo_ms"]) for r in rr)),
+                        f"{len(slow)} de {len(aft)}",
+                        f"{fmt(min(slow) / 1000, 1)} a {fmt(max(slow) / 1000, 1)} s" if slow else "-",
+                        f"{fmt(min(fast))} a {fmt(max(fast))} ms" if fast else "-",
                         fmt(med(num(r["sin_respuesta_pct"]) for r in rr), 2)])
-        print("2) Con cambios y un reacomodo: carga y tiempo de respuesta p95 en ms (mediana)")
-        table(["copias", "pedidas/s", "atendidas/s", "atendidas", "antes", "durante", "despues",
-               "sin respuesta %"], out)
+        print("2) Con cambios y un reacomodo: tiempo de respuesta p95 (antes y durante: mediana en ms)")
+        table(["copias", "pedidas/s", "atendidas", "antes", "durante", "lentas despues (>1 s)",
+               "rango lentas", "rango normales", "sin respuesta %"], out)
 
         out = []
         for k in K:
