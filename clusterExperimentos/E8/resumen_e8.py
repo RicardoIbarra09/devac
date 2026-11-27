@@ -61,14 +61,58 @@ def table(head, rows):
     print()
 
 
+def breakdown(rows):
+    g = defaultdict(list)
+    for x in rows:
+        g[(int(x["n"]), int(x["copias"]), float(x["ritmo_por_copia"]))].append(x)
+    for n in sorted({k[0] for k in g}):
+        print(f"=== E8, desglose del tiempo de respuesta, {n} politicas (promedios en ms, mediana de las repeticiones)\n")
+        out = []
+        for (nn, K, rate), rr in sorted(g.items()):
+            if nn != n:
+                continue
+            f = lambda c: med(num(x[c]) for x in rr)  # noqa: E731
+            resp = f("respuesta_media_ms")
+            parts = [f("envio_cliente_media_ms"), f("red_ida_vuelta_media_ms"), f("evaluacion_media_ms"),
+                     f("resto_media_ms")]
+            pc = [f"{fmt(v, 3)} ({100 * v / resp:.0f}%)" if v is not None and resp else "-" for v in parts]
+            out.append([K, fmt(rate * K), fmt(resp, 3), *pc, fmt(f("copia_ocupada_pct"), 0) + "%",
+                        sum(int(x["inconsistentes"]) for x in rr)])
+        table(["copias", "pedidas/s", "respuesta", "envio cliente", "red ida y vuelta", "evaluacion DEvAC",
+               "resto (fila, etc.)", "copia ocupada", "incorrectas"], out)
+        print("   respuesta = envio del cliente + red ida y vuelta + evaluacion en DEvAC + resto\n")
+
+
 def main():
     dirs = [d for a in sys.argv[1:] for d in glob.glob(a)]
     if not dirs:
         sys.exit("uso: resumen_e8.py CARPETA_DE_CORRIDA [...]")
     camb = load(dirs, "cambios")
     esc = load(dirs, "escalones")
+    desg = load(dirs, "desglose")
+    if desg:
+        breakdown(desg)
+    if not camb and desg:
+        return
     if not camb:
         sys.exit("no encontre e8_*_cambios.csv en " + ", ".join(dirs))
+    # mediciones descartadas: la saturacion la causo el cliente (se atraso mas de 1 s al enviar) y no DEvAC
+    # (que si atendio al menos el 99% de lo pedido). Como la fase B usa la mitad de esa capacidad, tambien se descarta.
+    bad = {}
+    for s in esc:
+        if s.get("saturado") != "True":
+            continue
+        lag, ped, resp = num(s.get("atraso_cliente_p99_ms")), num(s["ritmo_pedido_por_s"]), num(s["respondidas_por_s"])
+        if lag and lag > 1000 and ped and resp and resp >= 0.99 * ped:
+            key = (int(s["n"]), int(s["rep"]), int(s["copias"]))
+            bad.setdefault(key, []).append(f"escalon {s['escalon']}: {fmt(ped)}/s pedidas, {fmt(resp)} atendidas, "
+                                           f"atraso del cliente {fmt(lag / 1000, 1)} s")
+    if bad:
+        print("Mediciones descartadas (saturacion causada por el cliente, no por DEvAC):")
+        for (n, rp, k), why in sorted(bad.items()):
+            print(f"   {n} politicas, repeticion {rp + 1}, {k} copias -> " + "; ".join(why))
+        print()
+    camb = [r for r in camb if (int(r["n"]), int(r["rep"]), int(r["copias"])) not in bad]
     by_n = defaultdict(list)
     for r in camb:
         by_n[int(r["n"])].append(r)
@@ -77,6 +121,9 @@ def main():
         reps = sorted({int(r["rep"]) for r in rows})
         K = sorted({int(r["copias"]) for r in rows})
         print(f"=== E8, {n} politicas, {len(reps)} repeticiones, copias {K}\n")
+        cnt = {k: sum(1 for r in rows if int(r["copias"]) == k) for k in K}
+        if len(set(cnt.values())) > 1:
+            print("   repeticiones validas por numero de copias: " + ", ".join(f"{k}: {c}" for k, c in cnt.items()) + "\n")
         g = defaultdict(list)
         for r in rows:
             g[int(r["copias"])].append(r)

@@ -55,6 +55,7 @@ DATA_PORT = CTRL_PORT + 1
 REQ = struct.Struct("!IHI")     # numero de solicitud, escalon, indice en la lista de solicitudes
 RESP = struct.Struct("!IHbI")   # numero de solicitud, escalon, decision (1 permitir, 0 negar, -1 error), version
 LEN = struct.Struct("!I")
+PING = 65535                    # escalon especial: la copia contesta de inmediato, sin evaluar (mide red y mensajeria)
 now = time.time                 # reloj de pared: comparable entre nodos (NTP), solo para marcar momentos
 mono = time.perf_counter        # para medir duraciones dentro de un mismo proceso
 
@@ -192,6 +193,7 @@ def role_replica(args):
     ev, reqs = None, []
     state = {"version": 0, "phase": -1, "active": False}
     clients = {}        # socket -> bytearray pendiente
+    eval_us = []        # cuanto tardo DEvAC en evaluar cada solicitud del escalon actual (microsegundos)
     errors = Counter()
 
     def ctrl_send(obj):
@@ -219,6 +221,9 @@ def role_replica(args):
                 ctrl_send(("lista", round(mono() - t0, 3)))
             elif kind == "fase":
                 state["phase"] = msg[1]
+                eval_us.clear()
+            elif kind == "estadisticas":
+                ctrl_send(("estadisticas", np.asarray(eval_us, np.float32)))
             elif kind in ("sync", "rebuild"):
                 t0 = mono()
                 try:
@@ -284,10 +289,15 @@ def role_replica(args):
                     if not handle_ctrl():
                         return
                     seq, ph, idx = REQ.unpack_from(buf, j * REQ.size)
+                    if ph == PING:
+                        out += RESP.pack(seq, ph, 0, state["version"])
+                        continue
                     if ph != state["phase"] or ev is None or not state["active"]:
                         continue  # solicitud de un escalon que ya termino: se descarta sin evaluar
                     try:
+                        te = mono()
                         d = 1 if ev.evaluate(reqs[idx])["result"] == "allow" else 0
+                        eval_us.append((mono() - te) * 1e6)
                     except Exception as e:  # noqa: BLE001
                         errors["lector:" + type(e).__name__] += 1
                         d = -1
@@ -370,7 +380,25 @@ def run_step(socks, phase, rate, duration, warm, pool_n, cid, grace):
     return {"t_sched": t_sched[meas], "lat_ms": ((t_recv - t_sched) * 1e3)[meas].astype(np.float32),
             "dec": dec[meas], "ver": ver[meas], "idx": idx[meas],
             "atraso_p99_ms": round(float(np.percentile(lag, 99)) * 1e3, 3) if lag else 0.0,
+            "atraso_media_ms": round(float(np.mean(lag)) * 1e3, 4) if lag else 0.0,
             "enviadas": int(i)}
+
+
+def ping_replicas(addrs, n):
+    """Ida y vuelta de un mensaje de 10 bytes a cada copia, uno a la vez y sin evaluar: lo que cuesta la red
+    mas el manejo de mensajes en Python en ambos lados. Devuelve los tiempos en microsegundos."""
+    out = []
+    for host, port in addrs:
+        s = socket.create_connection((host, port), timeout=30)
+        s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        for i in range(n + 200):
+            t0 = mono()
+            s.sendall(REQ.pack(i, PING, 0))
+            recv_exact(s, RESP.size)
+            if i >= 200:          # las primeras 200 solo calientan la conexion
+                out.append((mono() - t0) * 1e6)
+        s.close()
+    return np.asarray(out, np.float32)
 
 
 def role_client(args):
@@ -381,6 +409,12 @@ def role_client(args):
         msg = recv_msg(ctrl)
         if msg[0] == "salir":
             return
+        if msg[0] == "ping":
+            try:
+                send_msg(ctrl, ("ping", ping_replicas(msg[1]["copias_addr"], msg[1]["n"])))
+            except Exception as e:  # noqa: BLE001
+                send_msg(ctrl, ("ping", {"fallo": repr(e)}))
+            continue
         if msg[0] == "escalon":
             cfg = msg[1]
             if cur != cfg["copias_addr"]:
@@ -443,7 +477,8 @@ def merge(res):
         return None, fails
     cat = lambda k: np.concatenate([r[k] for r in res])  # noqa: E731
     return {"t_sched": cat("t_sched"), "lat_ms": cat("lat_ms"), "dec": cat("dec"), "ver": cat("ver"),
-            "idx": cat("idx"), "atraso_p99_ms": max(r["atraso_p99_ms"] for r in res)}, []
+            "idx": cat("idx"), "atraso_p99_ms": max(r["atraso_p99_ms"] for r in res),
+            "atraso_media_ms": st.mean(r.get("atraso_media_ms", 0.0) for r in res)}, []
 
 
 def judge(m, D, duration_meas):
@@ -460,6 +495,55 @@ def judge(m, D, duration_meas):
         "p50_ms": pct(lat[ans], 50), "p95_ms": pct(lat[ans], 95), "p99_ms": pct(lat[ans], 99),
         "inconsistentes": int(bad.sum()), "atraso_cliente_p99_ms": m["atraso_p99_ms"],
     }
+
+
+def run_breakdown(args, rep, K, reps, clis, addrs, reqs, D, carga, log, next_phase):
+    """Desglose del tiempo de respuesta a ritmos fijos por copia. Usa promedios porque los promedios si se suman
+    (las medianas no):  respuesta = envio del cliente + red y mensajeria + evaluacion en DEvAC + resto,
+    donde 'red y mensajeria' es una ida y vuelta sin evaluar (ping), 'evaluacion' se mide dentro de la copia y
+    'resto' es lo que queda: espera en la fila de la copia y manejo de mensajes bajo carga."""
+    send_msg(clis[0].sock, ("ping", {"copias_addr": addrs, "n": args.ping_n}))
+    ping = recv_msg(clis[0].sock)[1]
+    if isinstance(ping, dict):
+        log(f"rep {rep + 1} K={K}: FALLO el ping {ping['fallo']}")
+        return []
+    ping_ms = ping / 1e3
+    mean = lambda a: round(float(np.mean(a)), 4) if len(a) else ""  # noqa: E731
+    rows = []
+    for rate_per_copy in args.desglose:
+        phase = next_phase()
+        for p in reps:
+            send_msg(p.sock, ("fase", phase))
+        res, _ = run_load(clis, addrs, phase, rate_per_copy * K, args.step, args.step_warmup, len(reqs), args.grace)
+        m, fails = merge(res)
+        if fails:
+            log(f"rep {rep + 1} K={K} desglose a {rate_per_copy:g}/s por copia: FALLO {fails[:2]}")
+            continue
+        j = judge(m, D[:1], args.step - args.step_warmup)
+        ev_ms = []
+        for p in reps:
+            send_msg(p.sock, ("estadisticas",))
+            ev_ms.append(recv_msg(p.sock)[1] / 1e3)
+        ev_all = np.concatenate(ev_ms) if ev_ms else np.zeros(0)
+        busy = [100.0 * float(e.sum()) / 1e3 / args.step for e in ev_ms]   # % del escalon que la copia evaluo
+        lat = m["lat_ms"][~np.isnan(m["lat_ms"])]
+        r_m, a_m, n_m, e_m = mean(lat), round(m["atraso_media_ms"], 4), mean(ping_ms), mean(ev_all)
+        row = {"carga": carga, "n": args.n, "rep": rep, "copias": K, "ritmo_por_copia": rate_per_copy,
+               "respondidas_por_s": j["respondidas_por_s"], "inconsistentes": j["inconsistentes"],
+               "respuesta_media_ms": r_m, "envio_cliente_media_ms": a_m, "red_ida_vuelta_media_ms": n_m,
+               "evaluacion_media_ms": e_m,
+               "resto_media_ms": round(r_m - a_m - n_m - e_m, 4) if "" not in (r_m, n_m, e_m) else "",
+               "respuesta_p50_ms": pct(lat, 50), "respuesta_p95_ms": j["p95_ms"],
+               "red_ida_vuelta_p50_ms": pct(ping_ms, 50), "red_ida_vuelta_p95_ms": pct(ping_ms, 95),
+               "evaluacion_p50_ms": pct(ev_all, 50), "evaluacion_p95_ms": pct(ev_all, 95),
+               "copia_ocupada_pct": round(st.mean(busy), 1) if busy else "",
+               "atraso_cliente_p99_ms": j["atraso_cliente_p99_ms"]}
+        rows.append(row)
+        log(f"rep {rep + 1} K={K} desglose a {rate_per_copy:g}/s por copia (promedios): respuesta {r_m} ms = "
+            f"envio del cliente {a_m} + red {n_m} + evaluacion {e_m} + resto {row['resto_media_ms']} ms; "
+            f"p95: respuesta {j['p95_ms']}, red {row['red_ida_vuelta_p95_ms']}, evaluacion "
+            f"{row['evaluacion_p95_ms']}; copia ocupada {row['copia_ocupada_pct']}%; incorrectas {j['inconsistentes']}")
+    return rows
 
 
 def role_primary(args):
@@ -494,7 +578,8 @@ def role_primary(args):
 
     base = [Policy.model_validate(p) for p in generate_w4(args.n, seed=args.data_seed, **w4)]
     n_ops = int(args.wrate * args.window)
-    steps_rows, change_rows, details = [], [], []
+    steps_rows, change_rows, details, breakdown_rows = [], [], [], []
+    phase_counter = iter(range(10_000, 60_000))
     phase_id = 0
 
     for rep in range(args.reps):
@@ -515,6 +600,11 @@ def role_primary(args):
             ready = [recv_msg(p.sock) for p in reps]
             log(f"rep {rep + 1} K={K}: motor armado en {t_build:.1f} s; foto enviada y copias listas en "
                 f"{mono() - t0:.1f} s (armado en cada copia: {[r[1] for r in ready]} s)")
+
+            if args.desglose:
+                breakdown_rows.extend(run_breakdown(args, rep, K, reps, clis, addrs, reqs, D, carga, log,
+                                                    lambda: next(phase_counter)))
+                continue
 
             # ---------------- fase A: escalones sin cambios
             # primero sube multiplicando por --step-factor hasta saturar; despues afina entre el ultimo escalon que
@@ -698,8 +788,8 @@ def role_primary(args):
             send_msg(p.sock, ("salir",))
         except OSError:
             pass
-    tag = f"e8_{carga}_n{args.n}"
-    for name, rows in (("escalones", steps_rows), ("cambios", change_rows)):
+    tag = f"e8_{carga}_n{args.n}" + ("_desglose" if args.desglose else "")
+    for name, rows in (("escalones", steps_rows), ("cambios", change_rows), ("desglose", breakdown_rows)):
         if rows:
             with open(out_dir / f"{tag}_{name}.csv", "w", newline="", encoding="utf-8") as f:
                 w = csv.DictWriter(f, fieldnames=list(dict.fromkeys(k for r in rows for k in r)), restval="")
@@ -752,6 +842,9 @@ def main():
     ap.add_argument("--theta", type=float, default=0.3)
     ap.add_argument("--pool", type=int, default=400)
     ap.add_argument("--data-seed", type=int, default=1)
+    ap.add_argument("--desglose", nargs="+", type=float, default=None,
+                    help="en lugar de las fases A y B, mide el desglose del tiempo a estos ritmos por copia")
+    ap.add_argument("--ping-n", type=int, default=2000, help="idas y vueltas por copia en la medicion de la red")
     ap.add_argument("--wait-peers", type=float, default=7200.0,
                     help="segundos que el principal espera a que se conecten todas las copias y clientes")
     args = ap.parse_args()
