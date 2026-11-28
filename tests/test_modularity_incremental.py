@@ -64,10 +64,10 @@ def _variant(policy, donor, rng, suffix):
     return new
 
 
-def _pipeline(policies, threshold):
+def _pipeline(policies, threshold, seed=None):
     builder = GraphBuilder()
     graph = builder.build_event_graph(policies, export=False)
-    detector = CommunityDetector()
+    detector = CommunityDetector(seed=seed)
     _, event_to_community = detector.detect_communities(graph)
     event_to_policy = {e.event_id: p.policy_id for p in policies for e in p.events}
     evaluator = CommunityPolicyEvaluator([], {})
@@ -228,16 +228,31 @@ def test_desactivar_con_events_vacio_equivale_a_borrar(capsys):
     capsys.readouterr()
 
 
-def test_reactivar_vuelve_a_poner_los_nodos(capsys):
+# al reactivar, la politica toma la comunidad con la mayor ganancia de modularidad, no la que le dio
+# louvain. la particion de louvain no es un optimo para mover un solo nodo (la ultima pasada mueve
+# comunidades agregadas, no eventos sueltos), asi que a veces otra comunidad gana mas, y entonces Q no
+# regresa a su valor inicial: queda en el de la nueva particion (en estas tres sube).
+# con nimbuslab y pol-008: en las semillas 0-3 vuelve a su comunidad de louvain; en 9 (1 -> 3),
+# 15 (4 -> 1) y 33 (2 -> 5) termina en otra que ya existia
+@pytest.mark.parametrize("seed, same_community", [
+    (0, True), (1, True), (2, True), (3, True), (9, False), (15, False), (33, False),
+])
+def test_reactivar_vuelve_a_poner_los_nodos(seed, same_community, capsys):
     pool = PolicyLoader.from_file(str(POLICIES))
-    evaluator, builder, monitor = _pipeline(copy.deepcopy(pool), 1e9)
+    evaluator, builder, monitor = _pipeline(copy.deepcopy(pool), 1e9, seed=seed)
     before = _snapshot(builder.graph)
-    q_before = monitor.q
     target = sorted(evaluator.policies)[7]
     original = evaluator.policies[target]
+    louvain_community = evaluator.policy_community[target]
     evaluator.update_policy(original.model_copy(update={"events": []}))
     evaluator.update_policy(original)
-    assert _snapshot(builder.graph) == before and abs(monitor.q - q_before) < TOL
+
+    # el grafo si queda igual; la particion puede cambiar
+    assert _snapshot(builder.graph) == before
+    assert sum(target in pids for pids in evaluator.policies_by_community.values()) == 1
+    assert (evaluator.policy_community[target] == louvain_community) == same_community
+    expected = _networkx_q(builder.graph, _evaluator_partition(evaluator, builder.graph))
+    assert abs(monitor.q - expected) < TOL
 
     # despues de una reconstruccion la desactivada se queda sin comunidad; al reactivar se le asigna una
     evaluator.update_policy(original.model_copy(update={"events": []}))
