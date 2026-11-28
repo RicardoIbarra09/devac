@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=p1_d3_repro_compara
-#SBATCH --partition=amd256
+#SBATCH --partition=amd
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1

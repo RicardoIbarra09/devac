@@ -52,7 +52,8 @@ paper1_dinamica/
 - Todos los sbatch llevan `--mem` explícito: sin él los trabajos se quedan en cola (`DefMemPerNode=UNLIMITED`).
 - **Tiempos (solo D2):** node422, `gold_noIB`, Xeon Gold 6342. `--exclusive`, una tarea a la vez
   (`--array=...%1`), `taskset` a un núcleo y `OMP/OPENBLAS/MKL_NUM_THREADS=1` (`TIMING=1`).
-- **Resultados de red (D1, D3, D4, D5):** `amd256` (node218 y node227, Opteron 6274), sin `--exclusive`,
+- **Resultados de red (D1, D3, D4, D5):** partición `amd` (Opteron 6274; antes `amd256`, que quedó con un solo
+  nodo en servicio), sin `--exclusive`,
   `--cpus-per-task=2` (un módulo: dos hilos comparten la FPU), `--mem=8G`, `--array=...%32` (la red grande
   de D5: `--mem=16G`, `%14`), y
   `srun --cpu-bind=cores` en vez de `taskset` (`TIMING=0`). Sus columnas de tiempo se guardan, pero el

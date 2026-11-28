@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=p1_d1_exactitud
 #SBATCH --array=0-11%32              # 2 conjuntos x 2 escenarios x 3 repeticiones (ver el reparto abajo)
-#SBATCH --partition=amd256           # node218 y node227: resultados de red, los tiempos no van al paper
+#SBATCH --partition=amd              # Opteron 6274 (amd256 quedo con un solo nodo): resultados de red, los tiempos no van al paper
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2            # un modulo completo del opteron (dos hilos comparten la FPU)
